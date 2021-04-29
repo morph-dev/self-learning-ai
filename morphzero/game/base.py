@@ -1,3 +1,18 @@
+from enum import IntEnum, unique
+
+@unique
+class Player(IntEnum):
+    NO_PLAYER = 0
+    FIRST_PLAYER = 1
+    SECOND_PLAYER = -1
+
+    def other_player(self):
+        if self is Player.FIRST_PLAYER:
+            return Player.SECOND_PLAYER
+        elif self is Player.SECOND_PLAYER:
+            return Player.FIRST_PLAYER
+        else:
+            raise ValueError(f"The {self} doesn't have other player.")
 
 class Rules:
     """
@@ -5,21 +20,44 @@ class Rules:
     """
     pass
 
+class Move:
+    """
+    Describes possible move.
+    """
+    def __init__(self, key):
+        self._key = key
+    def __hash__(self):
+        return hash(self._key)
+    def __eq__(self, other):
+        return isinstance(other, Move) and self._key == other._key
+    def __repr__(self):
+        return str(self._key)
+
 class State:
     """
     Uniquely represents the state of the game.
     """
 
-    def result(self):
+    @property
+    def current_player(self):
         """
-        Returns the current result of the game. If game is not finished, it returns None.
+        Returns player which is responsible for making next action.
         """
         pass
-    def isGameOver(self):
+
+    @property
+    def result(self):
+        """
+        Returns the result of the game, if game is over. If game is not over, it returns None.
+        """
+        pass
+
+    @property
+    def is_game_over(self):
         """
         Returns whether game is over.
         """
-        return result is None
+        return self.result is not None
 
     def key(self):
         """
@@ -31,45 +69,30 @@ class State:
     def __eq__(self, other):
         return isinstance(other, State) and self.key() == other.key()
 
-    def serialize(self):
-        """
-        Returns string that uniquely represents the state and can be used for deserialization.
-        """
-        pass
-
-    @classmethod
-    def deserialize(cls, serialized):
-        """
-        Creates State from serialized string.
-        """
-        pass
-
-class Move:
-    """
-    Describes possible move.
-    """
-    def __init__(self, key):
-        self.key = key
-    def __hash__(self):
-        return hash(self.key)
-    def __eq__(self, other):
-        return isinstance(other, Move) and self.key == other.key
-
 class GameEngine:
     def __init__(self, rules):
         self.rules = rules
 
-    def newGame(self):
-        pass
-
-    def availableMoves(self, state):
+    def new_game(self):
         """
-        Returns list of available moves. If list is empty, game is over and the result should be
-        retrieved from the state.
+        Returns the State the corresponds to the state of the new game according to rules.
         """
         pass
 
-    def playMove(self, state, move):
+    def is_move_playable(self, state, move):
+        """
+        Returns whether move is playable from a given state.
+        """
+        pass
+
+    def playable_moves(self, state):
+        """
+        Returns generator of playable moves, if game is not over. If game is over, it returns None
+        and the result should be retrieved from the state.
+        """
+        pass
+
+    def play_move(self, state, move):
         """
         Returns the state of the game that happens after playing given move from the given state.
         """
