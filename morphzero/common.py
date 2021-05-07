@@ -1,3 +1,4 @@
+from morphzero.game.base import Player
 import numpy as np
 
 class Directions:
@@ -42,3 +43,17 @@ def generate_indices(start_index, delta, length):
     for i in range(length):
         yield index
         index = tuple(i + d for i, d in zip(index, delta))
+
+def print_board(board, no_player_symbol=" ", first_player_symbol="X", second_player_symbol="O"):
+    """
+    Prints human readable board with '|' and '-' as separators between cells and fills the rest
+    using appropriate symbols.
+    """
+    row_separator = "-" * (board.shape[1] * 4 - 1)
+    player_map = {
+        Player.NO_PLAYER: no_player_symbol,
+        Player.FIRST_PLAYER: first_player_symbol,
+        Player.SECOND_PLAYER: second_player_symbol,
+    }
+    row_converter = lambda row: '|'.join(f" {player_map[v]} " for v in row)
+    return ("\n" + row_separator + "\n").join(row_converter(row) for row in board)

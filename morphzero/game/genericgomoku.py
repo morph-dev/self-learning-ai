@@ -1,5 +1,5 @@
 from morphzero.game.base import Player, Rules, State, Move, GameEngine
-from morphzero.common import Directions, check_all_inside_and_match
+from morphzero.common import Directions, check_all_inside_and_match, print_board
 import numpy as np
 
 class GenericGomokuRules(Rules):
@@ -40,10 +40,10 @@ class GenericGomokuState(State):
         return self._result
 
     def key(self):
-        return (self.board, self.current_player)
+        return (self.current_player, tuple(self.board.flatten()))
 
     def __str__(self):
-        return str(self.board)
+        return print_board(self.board)
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.__dict__)
 
