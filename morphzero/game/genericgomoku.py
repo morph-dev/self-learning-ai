@@ -22,10 +22,11 @@ class GenericGomokuMove(Move):
         super().__init__((row, column))
 
 class GenericGomokuState(State):
-    def __init__(self, board, current_player, result):
+    def __init__(self, board, current_player, result, result_extra_info):
         self._board = board
         self._current_player = current_player
         self._result = result
+        self._result_extra_info = result_extra_info
 
     @property
     def board(self):
@@ -38,6 +39,13 @@ class GenericGomokuState(State):
     @property
     def result(self):
         return self._result
+
+    @property
+    def result_extra_info(self):
+        """
+        Returns two tuples (row, column), represeting the end location of the winning sequence.
+        """
+        return self._result_extra_info
 
     def key(self):
         return (self.current_player, tuple(self.board.flatten()))
@@ -59,18 +67,25 @@ class GenericGomokuGameEngine(GameEngine):
             for j in range(columns):
                 if board[i, j] == Player.NO_PLAYER:
                     has_valid_moves = True
-                elif any(
-                        check_all_inside_and_match(board, (i, j), direction, rules.goal)
-                        for direction in Directions.HALF_INTERCARDINAL_DIRECTIONS):
-                    return board[i, j]
-        return None if has_valid_moves else Player.NO_PLAYER
+                else:
+                    for direction in Directions.HALF_INTERCARDINAL_DIRECTIONS:
+                        if check_all_inside_and_match(board, (i, j), direction, rules.goal):
+                            start = i, j
+                            end = (
+                                i + direction[0] * (rules.goal - 1),
+                                j + direction[1] * (rules.goal - 1)
+                            )
+                            return board[i, j], (start, end)
+        return (None, None) if has_valid_moves else (Player.NO_PLAYER, None)
 
     def new_game(self):
         board = np.full(self.rules.board_size, Player.NO_PLAYER)
+        result, result_extra_info = GenericGomokuGameEngine._get_game_result(board, self.rules)
         return GenericGomokuState(
             board,
             Player.FIRST_PLAYER,
-            GenericGomokuGameEngine._get_game_result(board, self.rules))
+            result,
+            result_extra_info)
 
     def is_move_playable(self, state, move):
         return not state.is_game_over and state.board[move] == Player.NO_PLAYER
@@ -90,7 +105,9 @@ class GenericGomokuGameEngine(GameEngine):
             raise ValueError(f"Move ({move}) is not available for given state ({rept(state)}).")
         board = state.board.copy()
         board[move] = state.current_player
+        result, result_extra_info = GenericGomokuGameEngine._get_game_result(board, self.rules)
         return GenericGomokuState(
             board,
             state.current_player.other_player(),
-            GenericGomokuGameEngine._get_game_result(board, self.rules))
+            result,
+            result_extra_info)
