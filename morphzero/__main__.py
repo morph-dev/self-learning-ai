@@ -1,5 +1,6 @@
 from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
 from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
+from morphzero.ui.genericgomokuui import GenericGomokuApp
 
 import random
 import os.path
@@ -86,6 +87,11 @@ def trainModel(path, iterations, learning_rate, exploration_rate):
         trainer.on_game_end(state)
 
     model.serialize(path)
+def gomoku_ui():
+    rules = GenericGomokuRules(board_size=(3,3), goal=3, first_player_name="Iks", second_player_name="Oks")
+    # rules = GenericGomokuRules(board_size=(15,15), goal=5, first_player_name="Iks", second_player_name="Oks")
+    app = GenericGomokuApp(rules)
+    app.mainloop()
 
 def main():
     # playHumanVsHuman()
@@ -98,11 +104,13 @@ def main():
     # path_format = "./models/hash_gomoku_i{iterations}_lr{learning_rate}_er{exploration_rate}.model"
     # trainModel(path_format.format(**train_config), **train_config)
 
-    playHumanVsAi(
-        # "./models/hash_gomoku_i100000_lr0.1_er0.3.model",
-        "./models/hash_gomoku_i10000_lr0.3_er0.2.model",
-        # debug=True,
-    )
+    # playHumanVsAi(
+    #     # "./models/hash_gomoku_i100000_lr0.1_er0.3.model",
+    #     "./models/hash_gomoku_i10000_lr0.3_er0.2.model",
+    #     # debug=True,
+    # )
+
+    gomoku_ui()
 
 if __name__ == "__main__":
     main()
