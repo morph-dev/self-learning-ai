@@ -17,7 +17,7 @@ def _get_player_color(player):
 class GenericGomokuApp(tk.Tk):
     def __init__(self, rules):
         super().__init__()
-        self.title('Gomoku')
+        self.title("Gomoku")
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.resizable(width=False, height=False)
