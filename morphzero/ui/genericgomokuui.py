@@ -1,8 +1,9 @@
+import tkinter as tk
+from tkinter import ttk
+
 from morphzero.game.base import Player
 from morphzero.game.genericgomoku import GenericGomokuGameEngine
 
-import tkinter as tk
-from tkinter import ttk
 
 def _get_player_color(player):
     if player == Player.FIRST_PLAYER:
@@ -11,6 +12,7 @@ def _get_player_color(player):
         return "red"
     else:
         raise ValueError(f"The {player} doesn't have assigned color.")
+
 
 class GenericGomokuApp(tk.Tk):
     def __init__(self, rules):
@@ -23,6 +25,7 @@ class GenericGomokuApp(tk.Tk):
         engine = GenericGomokuGameEngine(rules)
         _Frame(self, engine)
 
+
 class _Frame(ttk.Frame):
     def __init__(self, container, engine):
         super().__init__(container)
@@ -34,7 +37,7 @@ class _Frame(ttk.Frame):
         self.rowconfigure(1, weight=1)
 
         # player names
-        font="Calibri", 20, "bold"
+        font = "Calibri", 20, "bold"
         ttk.Label(
             self,
             text=self.engine.rules.first_player_name,
@@ -64,9 +67,10 @@ class _Frame(ttk.Frame):
         self.canvas.state_updated(self.state)
         self.update()
 
+
 class _Canvas(tk.Canvas):
     def __init__(self, container, rules, callback):
-        desired_width, desired_height = self._get_desired_size(rules)
+        desired_width, desired_height = _Canvas._get_desired_size(rules)
         super().__init__(container, width=desired_width, height=desired_height)
         self.rules = rules
         self.callback = callback
@@ -77,7 +81,8 @@ class _Canvas(tk.Canvas):
         self.bind("<Motion>", self.on_motion)
         self.bind("<Leave>", self.on_leave)
 
-    def _get_desired_size(self, rules):
+    @staticmethod
+    def _get_desired_size(rules):
         cell_size = 100 if max(rules.board_size) < 7 else 50
         return rules.board_size[1] * cell_size, rules.board_size[0] * cell_size
 
@@ -91,7 +96,7 @@ class _Canvas(tk.Canvas):
 
     def _get_center(self, row, column):
         cell_width, cell_height = self._get_cell_size()
-        return (cell_width * (2 * column + 1) / 2, cell_height * (2 * row + 1) / 2)
+        return cell_width * (2 * column + 1) / 2, cell_height * (2 * row + 1) / 2
 
     def state_updated(self, state):
         self.state = state

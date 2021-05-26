@@ -1,9 +1,9 @@
+import math
+import random
+
 from morphzero.game.base import Player
 from morphzero.training.base import Model, Trainer
 
-import math
-import numpy as np
-import random
 
 class HashGomokuModel(Model):
     """
@@ -11,6 +11,7 @@ class HashGomokuModel(Model):
     It's not able to make a decision/prediction for a state that has never seen before, but it works
     quite well for games with small number of possible states, e.g. TicTakToe.
     """
+
     def __init__(self):
         self.state_policy = dict()
 
@@ -29,13 +30,15 @@ class HashGomokuModel(Model):
         ]
 
         best_move_value = min((move_value for (move, move_value) in moves))
-        best_moves = [ move for (move, move_value) in moves if move_value <= best_move_value ]
+        best_moves = [move for (move, move_value) in moves if move_value <= best_move_value]
         return random.choice(best_moves)
+
 
 class HashGomokuTrainer(Trainer):
     """
     Trainer for the HashGomokuModel.
     """
+
     def __init__(self, game_engine, learning_rate, exploration_rate, model=None):
         super().__init__(game_engine)
         self.learning_rate = learning_rate

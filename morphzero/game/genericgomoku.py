@@ -1,6 +1,8 @@
-from morphzero.game.base import Player, Rules, State, Move, GameEngine
-from morphzero.common import Directions, check_all_inside_and_match, print_board
 import numpy as np
+
+from morphzero.common import Directions, check_all_inside_and_match, print_board
+from morphzero.game.base import Player, Rules, State, Move, GameEngine
+
 
 class GenericGomokuRules(Rules):
     def __init__(self, board_size, goal, first_player_name, second_player_name):
@@ -17,9 +19,11 @@ class GenericGomokuRules(Rules):
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.__dict__)
 
+
 class GenericGomokuMove(Move):
     def __init__(self, row, column):
         super().__init__((row, column))
+
 
 class GenericGomokuState(State):
     def __init__(self, board, current_player, result, result_extra_info):
@@ -43,17 +47,19 @@ class GenericGomokuState(State):
     @property
     def result_extra_info(self):
         """
-        Returns two tuples (row, column), represeting the end location of the winning sequence.
+        Returns two tuples (row, column), representing the end location of the winning sequence.
         """
         return self._result_extra_info
 
     def key(self):
-        return (self.current_player, tuple(self.board.flatten()))
+        return self.current_player, tuple(self.board.flatten())
 
     def __str__(self):
         return print_board(self.board)
+
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.__dict__)
+
 
 class GenericGomokuGameEngine(GameEngine):
     def __init__(self, rules):
@@ -98,11 +104,11 @@ class GenericGomokuGameEngine(GameEngine):
         for i in range(rows):
             for j in range(columns):
                 if state.board[i, j] == Player.NO_PLAYER:
-                    yield (i, j)
+                    yield i, j
 
     def play_move(self, state, move):
         if not self.is_move_playable(state, move):
-            raise ValueError(f"Move ({move}) is not available for given state ({rept(state)}).")
+            raise ValueError(f"Move ({move}) is not available for given state ({repr(state)}).")
         board = state.board.copy()
         board[move] = state.current_player
         result, result_extra_info = GenericGomokuGameEngine._get_game_result(board, self.rules)

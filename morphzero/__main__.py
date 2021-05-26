@@ -1,12 +1,12 @@
+import os.path
+
 from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
 from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
 from morphzero.ui.genericgomokuui import GenericGomokuApp
 
-import random
-import os.path
 
-def playHumanVsHuman():
-    rules = GenericGomokuRules(board_size=(3,3), goal=3, first_player_name="Iks", second_player_name="Oks")
+def play_human_vs_human():
+    rules = GenericGomokuRules(board_size=(3, 3), goal=3, first_player_name="Iks", second_player_name="Oks")
     engine = GenericGomokuGameEngine(rules)
     state = engine.new_game()
     print(state)
@@ -21,8 +21,9 @@ def playHumanVsHuman():
         print(state)
     print(f"Game is over! Result: {state.result}")
 
-def playHumanVsAi(path, debug):
-    rules = GenericGomokuRules(board_size=(3,3), goal=3, first_player_name="Iks", second_player_name="Oks")
+
+def play_human_vs_ai(path, debug):
+    rules = GenericGomokuRules(board_size=(3, 3), goal=3, first_player_name="Iks", second_player_name="Oks")
     engine = GenericGomokuGameEngine(rules)
     model = HashGomokuModel.deserialize(path)
 
@@ -55,29 +56,30 @@ def playHumanVsAi(path, debug):
         print("Unknown input")
         return
 
-    state = engine.new_game()
-    while not state.is_game_over:
-        move = current_player(state)
-        state = engine.play_move(state, move)
+    game_state = engine.new_game()
+    while not game_state.is_game_over:
+        played_move = current_player(game_state)
+        game_state = engine.play_move(game_state, played_move)
         current_player, other_player = other_player, current_player
 
-    print(state)
-    print(f"Game is over! Result: {state.result}")
+    print(game_state)
+    print(f"Game is over! Result: {game_state.result}")
 
-def trainModel(path, iterations, learning_rate, exploration_rate):
+
+def train_model(path, iterations, learning_rate, exploration_rate):
     if os.path.isfile(path):
         model = HashGomokuModel.deserialize(path)
     else:
         model = HashGomokuModel()
 
-    rules = GenericGomokuRules(board_size=(3,3), goal=3, first_player_name="Iks", second_player_name="Oks")
+    rules = GenericGomokuRules(board_size=(3, 3), goal=3, first_player_name="Iks", second_player_name="Oks")
     engine = GenericGomokuGameEngine(rules)
-    trainer = HashGomokuTrainer(engine, learning_rate=learning_rate, exploration_rate=exploration_rate, model = model)
+    trainer = HashGomokuTrainer(engine, learning_rate=learning_rate, exploration_rate=exploration_rate, model=model)
 
     print_at_ratio = 0.
     for i in range(iterations):
         if round(print_at_ratio * iterations) <= i:
-            print(f"Training {round(print_at_ratio*100)}%")
+            print(f"Training {round(print_at_ratio * 100)}%")
             print_at_ratio += 0.05
         state = engine.new_game()
         trainer.on_game_start()
@@ -87,11 +89,14 @@ def trainModel(path, iterations, learning_rate, exploration_rate):
         trainer.on_game_end(state)
 
     model.serialize(path)
+
+
 def gomoku_ui():
-    rules = GenericGomokuRules(board_size=(3,3), goal=3, first_player_name="Iks", second_player_name="Oks")
+    rules = GenericGomokuRules(board_size=(3, 3), goal=3, first_player_name="Iks", second_player_name="Oks")
     # rules = GenericGomokuRules(board_size=(15,15), goal=5, first_player_name="Iks", second_player_name="Oks")
     app = GenericGomokuApp(rules)
     app.mainloop()
+
 
 def main():
     # playHumanVsHuman()
@@ -104,13 +109,14 @@ def main():
     # path_format = "./models/hash_gomoku_i{iterations}_lr{learning_rate}_er{exploration_rate}.model"
     # trainModel(path_format.format(**train_config), **train_config)
 
-    # playHumanVsAi(
-    #     # "./models/hash_gomoku_i100000_lr0.1_er0.3.model",
-    #     "./models/hash_gomoku_i10000_lr0.3_er0.2.model",
-    #     # debug=True,
-    # )
+    play_human_vs_ai(
+        # "./models/hash_gomoku_i100000_lr0.1_er0.3.model",
+        "./models/hash_gomoku_i10000_lr0.3_er0.2.model",
+        debug=True,
+    )
 
-    gomoku_ui()
+    # gomoku_ui()
+
 
 if __name__ == "__main__":
     main()
