@@ -15,22 +15,22 @@ def _get_player_color(player):
 
 
 class GenericGomokuApp(tk.Tk):
-    def __init__(self, rules):
+    def __init__(self, game_config):
         super().__init__()
         self.title("Gomoku")
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.resizable(width=False, height=False)
 
-        engine = GenericGomokuGameEngine(rules)
-        _Frame(self, engine)
+        _Frame(self, game_config)
 
 
 class _Frame(ttk.Frame):
-    def __init__(self, container, engine):
+    def __init__(self, container, game_config):
         super().__init__(container)
         self.grid(row=0, column=0, sticky=tk.NSEW)
-        self.engine = engine
+        self.game_config = game_config
+        self.engine = GenericGomokuGameEngine(self.game_config.rules)
 
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
@@ -40,13 +40,13 @@ class _Frame(ttk.Frame):
         font = "Calibri", 20, "bold"
         ttk.Label(
             self,
-            text=self.engine.rules.first_player_name,
+            text=self.game_config.first_player_name,
             foreground=_get_player_color(Player.FIRST_PLAYER),
             font=font,
         ).grid(row=0, column=0, sticky=tk.W)
         ttk.Label(
             self,
-            text=self.engine.rules.second_player_name,
+            text=self.game_config.second_player_name,
             foreground=_get_player_color(Player.SECOND_PLAYER),
             font=font,
         ).grid(row=0, column=1, sticky=tk.E)
@@ -102,7 +102,7 @@ class _Canvas(tk.Canvas):
         self.state = state
         self.redraw()
 
-    def on_resize(self, event):
+    def on_resize(self, _event):
         self.redraw()
 
     def on_click(self, event):
@@ -121,7 +121,7 @@ class _Canvas(tk.Canvas):
                 tag="motion",
                 ratio=0.5)
 
-    def on_leave(self, event):
+    def on_leave(self, _event):
         self.delete("motion")
 
     def _draw_player_symbol(self, row, column, player, tag=None, ratio=1.):
