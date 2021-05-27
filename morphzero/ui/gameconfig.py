@@ -1,10 +1,7 @@
 from collections import namedtuple
 
+PlayerConfig = namedtuple("PlayerConfig",
+                          ["name", "model"])
+
 GameConfig = namedtuple("GameConfig",
-                        [
-                            "rules",
-                            "first_player_name",
-                            "first_player_model",
-                            "second_player_name",
-                            "second_player_model",
-                        ])
+                        ["rules", "players"])

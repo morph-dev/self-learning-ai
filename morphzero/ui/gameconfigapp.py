@@ -2,7 +2,8 @@ import tkinter as tk
 from collections import namedtuple
 from tkinter import ttk
 
-from ui.gameconfig import GameConfig
+from game.base import Player
+from ui.gameconfig import GameConfig, PlayerConfig
 
 RulesConfig = namedtuple("RulesConfig",
                          ["name", "rules", "models_config"])
@@ -68,20 +69,17 @@ class _Frame(ttk.Frame):
     def rules_config(self):
         return self.rules_configs[self.rules_combobox.current()]
 
+    @property
+    def models_config(self):
+        return self.rules_config.models_config
+
     def on_start_clicked(self):
-        rules_config = self.rules_config
-        models_config = rules_config.models_config
-
-        def create_model(player_frame):
-            model_config = models_config[player_frame.player_combobox.current()]
-            return model_config.constructor(model_config.path) if model_config.constructor else None
-
         self.winfo_toplevel().game_config = GameConfig(
-            rules=rules_config.rules,
-            first_player_name=self.first_player_frame.name.get(),
-            first_player_model=create_model(self.first_player_frame),
-            second_player_name=self.second_player_frame.name.get(),
-            second_player_model=create_model(self.second_player_frame))
+            rules=self.rules_config.rules,
+            players={
+                Player.FIRST_PLAYER: self.first_player_frame.create_player_config(),
+                Player.SECOND_PLAYER: self.second_player_frame.create_player_config(),
+            })
         self.winfo_toplevel().destroy()
 
 
@@ -106,9 +104,13 @@ class _PlayerFrame(ttk.LabelFrame):
         ttk.Entry(inner_frame, textvariable=self.name).grid(row=1, column=1, padx=2, pady=2, sticky=tk.EW)
 
     def on_rules_config_change(self, *_):
-        rules_config = self.master.rules_config
-        models_config = rules_config.models_config
-        _update_combobox_values(self.player_combobox, models_config)
+        _update_combobox_values(self.player_combobox, self.master.models_config)
 
     def on_combobox_change(self, *_):
         self.name.set(self.player_combobox.get())
+
+    def create_player_config(self):
+        models_config = self.master.models_config
+        model_config = models_config[self.player_combobox.current()]
+        model = model_config.constructor(model_config.path) if model_config.constructor else None
+        return PlayerConfig(self.name.get(), model)
