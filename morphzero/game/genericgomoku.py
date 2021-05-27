@@ -5,7 +5,7 @@ from morphzero.game.base import Player, Rules, State, Move, GameEngine
 
 
 class GenericGomokuRules(Rules):
-    def __init__(self, board_size, goal, first_player_name, second_player_name):
+    def __init__(self, board_size, goal):
         if len(board_size) != 2 or min(board_size) < 2:
             raise ValueError(f"Invalid board size: {board_size}")
         if goal < 2 or goal > min(board_size):
@@ -13,8 +13,6 @@ class GenericGomokuRules(Rules):
 
         self.board_size = board_size
         self.goal = goal
-        self.first_player_name = first_player_name
-        self.second_player_name = second_player_name
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.__dict__)

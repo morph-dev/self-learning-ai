@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter.messagebox import showinfo
 
 from morphzero.game.base import Player
 from morphzero.game.genericgomoku import GenericGomokuGameEngine
+from ui.common import get_result_message
 
 
 def _get_player_color(player):
@@ -22,43 +24,79 @@ class GenericGomokuApp(tk.Tk):
         self.rowconfigure(0, weight=1)
         self.resizable(width=False, height=False)
 
-        _Frame(self, game_config)
+        _Frame(self, game_config).grid(row=0, column=0, padx=5, pady=5, sticky=tk.NSEW)
 
 
 class _Frame(ttk.Frame):
     def __init__(self, container, game_config):
         super().__init__(container)
-        self.grid(row=0, column=0, sticky=tk.NSEW)
         self.game_config = game_config
         self.engine = GenericGomokuGameEngine(self.game_config.rules)
+        self.state = None
 
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
         self.rowconfigure(1, weight=1)
 
-        # player names
-        font = "Calibri", 20, "bold"
+        font = "Calibri", 16, "bold"
+
+        ttk.Button(
+            self,
+            text="New game",
+            command=self.on_new_game
+        ).grid(row=0, column=0, padx=5, pady=5)
+
         ttk.Label(
             self,
-            text=self.game_config.first_player_name,
+            text=self.game_config.players[Player.FIRST_PLAYER].name,
             foreground=_get_player_color(Player.FIRST_PLAYER),
             font=font,
-        ).grid(row=0, column=0, sticky=tk.W)
+        ).grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+
+        self.canvas = _Canvas(self, self.engine.rules, self.on_user_play)
+        self.canvas.grid(row=2, column=0, padx=5, pady=5, sticky=tk.NSEW)
+
         ttk.Label(
             self,
-            text=self.game_config.second_player_name,
+            text=self.game_config.players[Player.SECOND_PLAYER].name,
             foreground=_get_player_color(Player.SECOND_PLAYER),
             font=font,
-        ).grid(row=0, column=1, sticky=tk.E)
+        ).grid(row=3, column=0, padx=5, pady=5, sticky=tk.E)
 
-        self.canvas = _Canvas(self, self.engine.rules, self.on_play)
-        self.canvas.grid(row=1, column=0, columnspan=2)
+        self.on_new_game()
 
+    @property
+    def is_waiting_for_user_move(self):
+        """
+        Returns True if engine is waiting for user input, otherwise False (AI, game over).
+        """
+        if self.state.is_game_over:
+            return False
+        return self.game_config.players[self.state.current_player].model is None
+
+    @property
+    def is_waiting_for_model_move(self):
+        """
+        Returns True if engine is waiting for AI input, otherwise False (user, game over).
+        """
+        if self.state.is_game_over:
+            return False
+        return self.game_config.players[self.state.current_player].model is not None
+
+    def on_new_game(self, *_):
         self.state = self.engine.new_game()
         self.state_updated()
 
-    def on_play(self, row, column):
-        move = (row, column)
+    def on_user_play(self, row, column):
+        if not self.is_waiting_for_user_move:
+            return
+        self.play_move((row, column))
+
+    def play_model_move(self):
+        model = self.game_config.players[self.state.current_player].model
+        move = model.play_move(self.engine, self.state)
+        self.play_move(move)
+
+    def play_move(self, move):
         if self.engine.is_move_playable(self.state, move):
             self.state = self.engine.play_move(self.state, move)
             self.state_updated()
@@ -66,6 +104,10 @@ class _Frame(ttk.Frame):
     def state_updated(self):
         self.canvas.state_updated(self.state)
         self.update()
+        if self.state.is_game_over:
+            showinfo("Game over", get_result_message(self.state, self.game_config.players))
+        elif self.is_waiting_for_model_move:
+            self.after(500, self.play_model_move)
 
 
 class _Canvas(tk.Canvas):
@@ -110,7 +152,7 @@ class _Canvas(tk.Canvas):
 
     def on_motion(self, event):
         self.delete("motion")
-        if self.state.is_game_over:
+        if not self.master.is_waiting_for_user_move:
             return
         row, column = self._get_row_column_for_event(event)
         if self.state.board[row, column] == Player.NO_PLAYER:
