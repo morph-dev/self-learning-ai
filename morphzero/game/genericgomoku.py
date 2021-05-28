@@ -112,6 +112,6 @@ class GenericGomokuGameEngine(GameEngine):
         result, result_extra_info = GenericGomokuGameEngine._get_game_result(board, self.rules)
         return GenericGomokuState(
             board,
-            state.current_player.other_player(),
+            state.current_player.other_player,
             result,
             result_extra_info)
