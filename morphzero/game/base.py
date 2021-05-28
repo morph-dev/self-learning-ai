@@ -7,10 +7,11 @@ class Player(IntEnum):
     FIRST_PLAYER = 1
     SECOND_PLAYER = -1
 
+    @property
     def other_player(self):
-        if self is Player.FIRST_PLAYER:
+        if self == Player.FIRST_PLAYER:
             return Player.SECOND_PLAYER
-        elif self is Player.SECOND_PLAYER:
+        elif self == Player.SECOND_PLAYER:
             return Player.FIRST_PLAYER
         else:
             raise ValueError(f"The {self} doesn't have other player.")
