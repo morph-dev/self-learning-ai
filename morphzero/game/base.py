@@ -28,18 +28,7 @@ class Move:
     """
     Describes possible move.
     """
-
-    def __init__(self, key):
-        self._key = key
-
-    def __hash__(self):
-        return hash(self._key)
-
-    def __eq__(self, other):
-        return isinstance(other, Move) and self._key == other._key
-
-    def __repr__(self):
-        return str(self._key)
+    pass
 
 
 class State:
@@ -110,3 +99,47 @@ class GameEngine:
         Returns the state of the game that happens after playing given move from the given state.
         """
         raise NotImplementedError()
+
+
+class GameService:
+    def __init__(self, engine):
+        self.engine = engine
+        self.state = None
+        self.listeners = list()
+
+    def new_game(self):
+        self.state = self.engine.new_game()
+        for listener in self.listeners:
+            listener.on_new_game(self.state)
+
+    def play_move(self, move):
+        old_state = self.state
+        self.state = self.engine.play_move(self.state, move)
+        for listener in self.listeners:
+            listener.on_move(old_state, move, self.state)
+
+        if self.state.is_game_over:
+            for listener in self.listeners:
+                listener.on_game_over(self.state)
+
+    def add_listener(self, listener):
+        self.listeners.append(listener)
+
+    def remove_listener(self, listener):
+        self.listeners.remove(listener)
+
+    class Listener:
+        def on_new_game(self, state):
+            """
+            Called when new game is started.
+            """
+
+        def on_move(self, old_state, move, new_state):
+            """
+            Called when move is played.
+            """
+
+        def on_game_over(self, state):
+            """
+            Called when game is finished.
+            """
