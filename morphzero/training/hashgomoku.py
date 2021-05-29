@@ -57,7 +57,7 @@ class HashGomokuTrainer(Trainer):
 
     def on_game_end(self, state):
         self.game_states.append(state)
-        score = state.result
+        score = state.result.winner
         for state in reversed(self.game_states):
             state_value = self.model.state_policy.get(state, Player.NO_PLAYER)
             state_value += (score - state_value) * self.learning_rate

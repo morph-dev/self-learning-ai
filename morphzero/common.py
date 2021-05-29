@@ -1,22 +1,52 @@
-import numpy as np
+from collections import namedtuple
 
 from morphzero.game.base import Player
 
 
+class BoardCoordinates(namedtuple("BoardCoordinates", ["row", "column"])):
+    __slots__ = ()
+
+    def __add__(self, other):
+        return BoardCoordinates(row=self.row + other.row,
+                                column=self.column + other.column)
+
+    def __sub__(self, other):
+        return BoardCoordinates(row=self.row - other.row,
+                                column=self.column - other.column)
+
+    def __mul__(self, mul):
+        return BoardCoordinates(row=self.row * mul,
+                                column=self.column * mul)
+
+    def __neg__(self):
+        return BoardCoordinates(row=-self.row,
+                                column=-self.column)
+
+
+def _to_board_coordinates_list(directions):
+    return [BoardCoordinates(*t) for t in directions]
+
+
 class Directions:
-    RIGHT_AND_DOWN_DIRECTIONS = [(0, 1), (1, 0)]
+    RIGHT_AND_DOWN = _to_board_coordinates_list([
+        (0, 1), (1, 0)])
     """Only → and ↓ directions."""
 
-    CARDINAL_DIRECTIONS = list(zip([-1, 0, 1, 0], [0, 1, 0, -1]))
+    CARDINAL = _to_board_coordinates_list([
+        (-1, 0), (0, 1), (1, 0), (0, -1)])
     """The 4 main directions (↑ → ↓ ←)."""
 
-    INTERCARDINAL_DIRECTIONS = [
-        (i - 1, j - 1) for (i, j) in np.ndindex((3, 3)) if (i, j) != (1, 1)
-    ]
+    INTERCARDINAL = _to_board_coordinates_list([
+        (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
     """The 8 main directions (↖ ↑ ↗ ← → ↙ ↓ ↘)."""
 
-    HALF_INTERCARDINAL_DIRECTIONS = list(zip([0, 1, 1, 1], [1, 1, 0, -1]))
+    HALF_INTERCARDINAL = _to_board_coordinates_list([
+        (0, 1), (1, 1), (1, 0), (1, -1)])
     """Only one direction from main 8 axis (→ ↘ ↓ ↙)."""
+
+    @classmethod
+    def __new__(cls, *args, **kwargs):
+        raise NotImplementedError("Can't create instance of the Directions class.")
 
 
 def is_inside_matrix(index, size):
@@ -26,28 +56,29 @@ def is_inside_matrix(index, size):
     return (0 <= index[0] < size[0]) and (0 <= index[1] < size[1])
 
 
-def check_all_inside_and_match(matrix, start_index, delta, length):
+def check_all_inside_and_match(board, start_coordinates, delta, length):
     """
-    Returns whether all length values, starting with start_index and incrementing by delta,
+    Returns whether all coordinates, starting with start_index and incrementing
+    by delta length times, have the same value in the board.
     """
-    if not is_inside_matrix(start_index, matrix.shape):
+    if not is_inside_matrix(start_coordinates, board.shape):
         return False
-    value = matrix[start_index]
+    value = board[start_coordinates]
     return all(
-        is_inside_matrix(index, matrix.shape) and value == matrix[index]
-        for index in generate_indices(start_index, delta, length)
+        is_inside_matrix(coordinates, board.shape) and value == board[coordinates]
+        for coordinates in generate_coordinates(start_coordinates, delta, length)
     )
 
 
-def generate_indices(start_index, delta, length):
+def generate_coordinates(start_coordinates, delta, length):
     """
-    Generates following indices:
-    start_index, start_index + delta, ..., start_index + (length - 1) * delta
-    where addition is performed element wise.
+    Generates following coordinates:
+    start_coordinates, start_coordinates + delta, ..., start_coordinates + (length - 1) * delta
     """
-    start_index = tuple(start_index)
+    coordinates = start_coordinates
     for i in range(length):
-        yield tuple(si + i * d for si, d in zip(start_index, delta))
+        yield coordinates
+        coordinates += delta
 
 
 def print_board(board, no_player_symbol=" ", first_player_symbol="X", second_player_symbol="O"):

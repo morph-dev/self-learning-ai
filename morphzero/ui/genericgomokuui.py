@@ -105,7 +105,7 @@ class _Frame(ttk.Frame):
         self.canvas.state_updated(self.state)
         self.update()
         if self.state.is_game_over:
-            showinfo("Game over", get_result_message(self.state, self.game_config.players))
+            showinfo("Game over", get_result_message(self.state.result.winner, self.game_config.players))
         elif self.is_waiting_for_model_move:
             self.after(500, self.play_model_move)
 
@@ -220,15 +220,17 @@ class _Canvas(tk.Canvas):
                 self._draw_player_symbol(row, column, self.state.board[row, column])
 
         # draw winning line
-        if self.state.result_extra_info is not None:
-            start, end = self.state.result_extra_info
-            center_start = self._get_center(*start)
-            center_end = self._get_center(*end)
-            self.create_line(
-                center_start[0],
-                center_start[1],
-                center_end[0],
-                center_end[1],
-                width=10,
-                fill=_get_player_color(self.state.board[start]),
-                capstyle=tk.ROUND)
+        if self.state.result is not None:
+            start = self.state.result.winning_line_start
+            end = self.state.result.winning_line_end
+            if start is not None and end is not None:
+                center_start = self._get_center(*start)
+                center_end = self._get_center(*end)
+                self.create_line(
+                    center_start[0],
+                    center_start[1],
+                    center_end[0],
+                    center_end[1],
+                    width=10,
+                    fill=_get_player_color(self.state.board[start]),
+                    capstyle=tk.ROUND)

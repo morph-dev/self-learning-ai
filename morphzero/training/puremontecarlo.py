@@ -56,7 +56,7 @@ class PureMonteCarloTreeSearch:
                 state = game_engine.play_move(state, move)
             # Backpropagation
             while nodes:
-                result = state.result
+                result = state.result.winner
                 node = nodes.pop()
                 node.update(result)
 

@@ -19,16 +19,14 @@ class Player(IntEnum):
 
 class Rules:
     """
-    Properties of the game (board size, player names, etc)
+    Properties of the game (board size, winning_condition etc)
     """
-    pass
 
-
-class Move:
-    """
-    Describes possible move.
-    """
-    pass
+    def create_game_engine(self):
+        """
+        Creates game engine.
+        """
+        raise NotImplementedError()
 
 
 class State:
@@ -36,19 +34,23 @@ class State:
     Uniquely represents the state of the game.
     """
 
+    def __init__(self, current_player, result):
+        self._current_player = current_player
+        self._result = result
+
     @property
     def current_player(self):
         """
         Returns player which is responsible for making next action.
         """
-        raise NotImplementedError()
+        return self._current_player
 
     @property
     def result(self):
         """
         Returns the result of the game, if game is over. If game is not over, it returns None.
         """
-        raise NotImplementedError()
+        return self._result
 
     @property
     def is_game_over(self):
