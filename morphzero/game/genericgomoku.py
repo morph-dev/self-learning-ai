@@ -5,17 +5,17 @@ from morphzero.common import BoardCoordinates
 from morphzero.game.base import Player, GameEngine
 
 
-def tic_tac_toe_rules():
-    return GenericGomokuRules(board=(3, 3), goal=3)
-
-
-def gomoku_rules():
-    return GenericGomokuRules(board=(15, 15), goal=5)
-
-
 class GenericGomokuRules(MatrixBoardConnectInARowRules):
     def create_game_engine(self):
         return GenericGomokuGameEngine(self)
+
+    @classmethod
+    def create_tic_tac_toe_rules(cls):
+        return cls(board_size=(3, 3), goal=3)
+
+    @classmethod
+    def create_gomoku_rules(cls):
+        return cls(board_size=(15, 15), goal=5)
 
 
 GenericGomokuMove = BoardCoordinates
