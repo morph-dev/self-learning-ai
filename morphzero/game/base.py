@@ -135,13 +135,16 @@ class GameService:
             """
             Called when new game is started.
             """
+            raise NotImplementedError()
 
         def on_move(self, old_state, move, new_state):
             """
             Called when move is played.
             """
+            raise NotImplementedError()
 
         def on_game_over(self, state):
             """
             Called when game is finished.
             """
+            raise NotImplementedError()
