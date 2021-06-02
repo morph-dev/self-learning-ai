@@ -2,14 +2,18 @@ from collections import namedtuple
 
 import numpy as np
 
-from game.common import ConnectInARowResult, MatrixState, MatrixBoardConnectInARowRules
 from morphzero.common import BoardCoordinates
 from morphzero.game.base import Player, GameEngine
+from morphzero.game.common import ConnectInARowResult, MatrixState, MatrixBoardConnectInARowRules
 
 
 class ConnectFourRules(MatrixBoardConnectInARowRules):
     def create_game_engine(self):
         return ConnectFourGameEngine(self)
+
+    @classmethod
+    def create_default_rules(cls):
+        return cls(board_size=(6, 7), goal=4)
 
 
 ConnectFourMove = namedtuple("ConnectFourMove", ["column"])
@@ -58,6 +62,6 @@ class ConnectFourGameEngine(GameEngine):
         board[coordinates] = state.current_player
         return ConnectFourState(
             board=board,
-            current_player=state.current_player.other_player(),
+            current_player=state.current_player.other_player,
             result=ConnectInARowResult.create_from_board_and_last_move(
                 self.rules, board, coordinates))

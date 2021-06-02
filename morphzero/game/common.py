@@ -1,7 +1,7 @@
 from collections import namedtuple
 
-from common import print_board, BoardCoordinates, Directions, check_all_inside_and_match, is_inside_matrix
-from game.base import Rules, State, Player
+from morphzero.common import print_board, BoardCoordinates, Directions, check_all_inside_and_match, is_inside_matrix
+from morphzero.game.base import Rules, State, Player
 
 
 class MatrixBoardConnectInARowRules(Rules,

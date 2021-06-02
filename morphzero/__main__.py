@@ -2,8 +2,8 @@ import os.path
 
 from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
 from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
-from ui.gameconfigapp import RulesConfig, GameConfigApp, ModelConfig
-from ui.genericgomokuui import GenericGomokuApp
+from morphzero.ui.gameconfigapp import RulesConfig, GameConfigApp, ModelConfig
+from morphzero.ui.genericgomokuui import GenericGomokuApp
 
 
 def train_model(path, iterations, learning_rate, exploration_rate):

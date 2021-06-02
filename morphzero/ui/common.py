@@ -1,4 +1,4 @@
-from game.base import Player
+from morphzero.game.base import Player
 
 
 def get_result_message(winner, player_names):

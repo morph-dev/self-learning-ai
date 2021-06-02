@@ -2,7 +2,7 @@ import math
 import random
 from collections import deque
 
-from game.base import Player
+from morphzero.game.base import Player
 
 
 def _uct(parent, child, exploration_rate=1.4):

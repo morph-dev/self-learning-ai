@@ -1,8 +1,8 @@
 import numpy as np
 
-from game.common import MatrixBoardConnectInARowRules, MatrixState, ConnectInARowResult
 from morphzero.common import BoardCoordinates
 from morphzero.game.base import Player, GameEngine
+from morphzero.game.common import MatrixBoardConnectInARowRules, MatrixState, ConnectInARowResult
 
 
 class GenericGomokuRules(MatrixBoardConnectInARowRules):
