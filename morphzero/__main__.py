@@ -1,9 +1,11 @@
 import os.path
 
+from morphzero.game.connectfour import ConnectFourRules
 from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
 from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
-from morphzero.ui.gameconfigapp import RulesConfig, GameConfigApp, ModelConfig
-from morphzero.ui.genericgomokuui import GenericGomokuApp
+from morphzero.ui.gameapp import GameApp
+from morphzero.ui.gameconfig import GameType
+from morphzero.ui.gameselection import GameConfigParams, PlayerConfigParams, GameSelectionState
 
 
 def train_model(path, iterations, learning_rate, exploration_rate):
@@ -40,42 +42,36 @@ def main():
     # path_format = "./models/hash_gomoku_i{iterations}_lr{learning_rate}_er{exploration_rate}.model"
     # trainModel(path_format.format(**train_config), **train_config)
 
-    rules_config = [
-        RulesConfig(
-            "TicTacToe",
-            GenericGomokuRules(board_size=(3, 3), goal=3),
+    game_selection_state = GameSelectionState([
+        GameConfigParams(
+            "Tic Tac Toe",
+            GameType.TIC_TAC_TOE,
+            GenericGomokuRules.create_tic_tac_toe_rules(),
             [
-                ModelConfig("Human", None, None),
-                ModelConfig("i100000_lr0.1_er0.3",
-                            "./models/hash_gomoku_i100000_lr0.1_er0.3.model",
-                            HashGomokuModel.deserialize),
-                ModelConfig("i10000_lr0.3_er0.2",
-                            "./models/hash_gomoku_i10000_lr0.3_er0.2.model",
-                            HashGomokuModel.deserialize),
+                PlayerConfigParams("Human", None),
+                PlayerConfigParams(
+                    "i100000_lr0.1_er0.3",
+                    lambda: HashGomokuModel.deserialize("./models/hash_gomoku_i100000_lr0.1_er0.3.model")),
+                PlayerConfigParams(
+                    "i10000_lr0.3_er0.2",
+                    lambda: HashGomokuModel.deserialize("./models/hash_gomoku_i10000_lr0.3_er0.2.model")),
             ]
         ),
-        RulesConfig(
-            "Gomoku (15x15)",
-            GenericGomokuRules(board_size=(15, 15), goal=5),
-            [ModelConfig("Human", None, None)]
+        GameConfigParams(
+            "Gomoku",
+            GameType.GOMOKU,
+            GenericGomokuRules.create_gomoku_rules(),
+            [PlayerConfigParams("Human", None)]
         ),
-        RulesConfig(
-            "Gomoku (19x19)",
-            GenericGomokuRules(board_size=(19, 19), goal=5),
-            [ModelConfig("Human", None, None)]
-        ),
-    ]
-
-    app = GameConfigApp(rules_config)
-    app.mainloop()
-
-    game_config = app.game_config
-    if game_config is None:
-        return
-    print(game_config)
-
-    app = GenericGomokuApp(game_config)
-    app.mainloop()
+        GameConfigParams(
+            "Connect 4",
+            GameType.CONNECT_FOUR,
+            ConnectFourRules.create_default_rules(),
+            [PlayerConfigParams("Human", None)]
+        )
+    ])
+    app = GameApp(game_selection_state)
+    app.MainLoop()
 
 
 if __name__ == "__main__":

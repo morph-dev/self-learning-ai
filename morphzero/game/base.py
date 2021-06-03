@@ -124,6 +124,9 @@ class GameService:
             for listener in self.listeners:
                 listener.on_game_over(self.state)
 
+    def is_move_playable(self, move):
+        return self.engine.is_move_playable(self.state, move)
+
     def add_listener(self, listener):
         self.listeners.append(listener)
 
