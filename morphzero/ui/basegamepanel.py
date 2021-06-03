@@ -8,7 +8,7 @@ from morphzero.ui.util import matrixgame
 from morphzero.ui.common import GameGraphicsContext
 from morphzero.ui.util.player_name_decorator import ColorPlayerNameDecorator
 
-_MIN_AI_PLAY_TIME_SEC = 1
+_MIN_AI_PLAY_TIME_SEC = 0.2
 
 
 class BaseGamePanel(wx.Panel, GameService.Listener):

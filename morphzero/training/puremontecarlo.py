@@ -2,6 +2,7 @@ import math
 import random
 from collections import deque
 
+from morphzero.game.ai_player import AiPlayer
 from morphzero.game.base import Player
 
 
@@ -17,7 +18,7 @@ def _uct(parent, child, exploration_rate=1.4):
     return expansion_value + exploration_rate * exploration_value
 
 
-class PureMonteCarloTreeSearch:
+class PureMonteCarloTreeSearch(AiPlayer):
     def __init__(self, rounds, exploration_rate=1.4):
         self.rounds = rounds
         self.exploration_rate = exploration_rate
@@ -30,8 +31,7 @@ class PureMonteCarloTreeSearch:
             (node.win_ratio, move)
             for move, node in tree.children.items()
         ])
-        # move, _ = max(tree.children.items(), key=lambda item: item[1].win_ratio)
-        return move, tree
+        return move
 
     def build_mcts(self, game_engine, state):
         root = _Node(state)

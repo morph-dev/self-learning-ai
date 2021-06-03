@@ -3,6 +3,7 @@ import os.path
 from morphzero.game.connectfour import ConnectFourRules
 from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
 from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
+from morphzero.training.puremontecarlo import PureMonteCarloTreeSearch
 from morphzero.ui.gameapp import GameApp
 from morphzero.ui.gameconfig import GameType
 from morphzero.ui.gameselection import GameConfigParams, PlayerConfigParams, GameSelectionState
@@ -55,6 +56,12 @@ def main():
                 PlayerConfigParams(
                     "i10000_lr0.3_er0.2",
                     lambda: HashGomokuModel.deserialize("./models/hash_gomoku_i10000_lr0.3_er0.2.model")),
+                PlayerConfigParams(
+                    "pure_monte_carlo_r500_er1.4",
+                    lambda: PureMonteCarloTreeSearch(500, exploration_rate=1.4)),
+                PlayerConfigParams(
+                    "pure_monte_carlo_r1000_er1.4",
+                    lambda: PureMonteCarloTreeSearch(1000, exploration_rate=1.4)),
             ]
         ),
         GameConfigParams(

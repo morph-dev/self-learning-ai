@@ -1,7 +1,9 @@
 import pickle
 
+from morphzero.game.ai_player import AiPlayer
 
-class Model:
+
+class Model(AiPlayer):
     """
     Abstract class for playing and the game.
     """

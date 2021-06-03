@@ -121,11 +121,11 @@ class PlayerBox(wx.StaticBox):
 
         grid_sizer = wx.GridBagSizer(vgap=5, hgap=5)
         # row 0
-        grid_sizer.Add(wx.StaticText(self, label="Type:"), pos=(0, 0), flag=wx.ALIGN_CENTER)
+        grid_sizer.Add(wx.StaticText(self, label="Type:"), pos=(0, 0), flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
         self.ai_player_choice = self.create_ai_player_choice(player_box_state)
         grid_sizer.Add(self.ai_player_choice, pos=(0, 1), flag=wx.EXPAND)
         # row 1
-        grid_sizer.Add(wx.StaticText(self, label="Name:"), pos=(1, 0), flag=wx.ALIGN_CENTER)
+        grid_sizer.Add(wx.StaticText(self, label="Name:"), pos=(1, 0), flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT)
         self.name = wx.TextCtrl(self)
         if player_box_state and player_box_state.selected_name:
             self.name.SetValue(player_box_state.selected_name)
@@ -139,7 +139,7 @@ class PlayerBox(wx.StaticBox):
         self.sizer.Add(grid_sizer, wx.SizerFlags(1).Expand().Border())
 
     def create_ai_player_choice(self, player_box_state):
-        ai_player_choice = wx.Choice(self, size=(200, -1))
+        ai_player_choice = wx.Choice(self)
         ai_player_choice.Bind(wx.EVT_CHOICE, self.on_ai_player_choice)
 
         game_config_params = self.rules_choice.GetClientData(self.rules_choice.GetSelection())
@@ -157,6 +157,7 @@ class PlayerBox(wx.StaticBox):
         _populate_choice_with_params(self.ai_player_choice,
                                      game_config_params.player_config_params_list,
                                      lambda params: params.default_name)
+        self.GetTopLevelParent().Fit()
 
     def update_name(self):
         self.name.SetValue(self.get_selected_player_config_params().default_name)
