@@ -2,7 +2,9 @@ import os.path
 
 from morphzero.game.connectfour import ConnectFourRules
 from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
+from morphzero.training.common import LineConnectionHeuristics
 from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
+from morphzero.training.heuristicsmontecarlo import HeuristicsMonteCarloTreeSearch
 from morphzero.training.puremontecarlo import PureMonteCarloTreeSearch
 from morphzero.ui.gameapp import GameApp
 from morphzero.ui.gameconfig import GameType
@@ -60,21 +62,47 @@ def main():
                     "pure_monte_carlo_r500_er1.4",
                     lambda: PureMonteCarloTreeSearch(500, exploration_rate=1.4)),
                 PlayerConfigParams(
-                    "pure_monte_carlo_r1000_er1.4",
-                    lambda: PureMonteCarloTreeSearch(1000, exploration_rate=1.4)),
+                    "heuristics_mcts_h[100;30;10];10_r100_s5",
+                    lambda: HeuristicsMonteCarloTreeSearch(
+                        heuristics=LineConnectionHeuristics([100, 30, 10], 10),
+                        rounds=100,
+                        rollout_steps=5,
+                    )),
             ]
         ),
         GameConfigParams(
             "Gomoku",
             GameType.GOMOKU,
             GenericGomokuRules.create_gomoku_rules(),
-            [PlayerConfigParams("Human", None)]
+            [
+                PlayerConfigParams("Human", None),
+            ]
         ),
         GameConfigParams(
             "Connect 4",
             GameType.CONNECT_FOUR,
             ConnectFourRules.create_default_rules(),
-            [PlayerConfigParams("Human", None)]
+            [
+                PlayerConfigParams("Human", None),
+                PlayerConfigParams(
+                    "heuristics_mcts_h[100;30;10];10_r100_s10_er1",
+                    lambda: HeuristicsMonteCarloTreeSearch(
+                        heuristics=LineConnectionHeuristics([100, 30, 10, 2], 10),
+                        rounds=100,
+                        rollout_steps=10,
+                        max_time_sec=10,
+                        exploration_rate=1,
+                    )),
+                PlayerConfigParams(
+                    "heuristics_mcts_h[100;30;10];10_r200_s5_er1",
+                    lambda: HeuristicsMonteCarloTreeSearch(
+                        heuristics=LineConnectionHeuristics([100, 30, 10, 2], 10),
+                        rounds=200,
+                        rollout_steps=5,
+                        max_time_sec=10,
+                        exploration_rate=1,
+                    )),
+            ]
         )
     ])
     app = GameApp(game_selection_state)
