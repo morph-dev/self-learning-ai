@@ -50,18 +50,27 @@ class ConnectFourGameEngine(GameEngine):
             if state.board[0, column] == Player.NO_PLAYER:
                 yield ConnectFourMove(column)
 
-    def play_move(self, state, move):
+    def play_move(self, state, move, in_place=False):
         if not self.is_move_playable(state, move):
             raise ValueError(f"Move ({move}) is not available for given state ({state}).")
-        board = state.board.copy()
+        if in_place:
+            board = state.board
+        else:
+            board = state.board.copy()
         rows, _ = self.rules.board_size
         row = rows - 1
         while board[row, move.column] != Player.NO_PLAYER:
             row -= 1
         coordinates = BoardCoordinates(row, move.column)
         board[coordinates] = state.current_player
-        return ConnectFourState(
-            board=board,
-            current_player=state.current_player.other_player,
-            result=ConnectInARowResult.create_from_board_and_last_move(
-                self.rules, board, coordinates))
+        if in_place:
+            state.current_player = state.current_player.other_player
+            state.result = ConnectInARowResult.create_from_board_and_last_move(
+                self.rules, board, coordinates)
+            return state
+        else:
+            return ConnectFourState(
+                board=board,
+                current_player=state.current_player.other_player,
+                result=ConnectInARowResult.create_from_board_and_last_move(
+                    self.rules, board, coordinates))

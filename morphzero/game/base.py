@@ -96,9 +96,10 @@ class GameEngine:
         """
         raise NotImplementedError()
 
-    def play_move(self, state, move):
+    def play_move(self, state, move, in_place=False):
         """
         Returns the state of the game that happens after playing given move from the given state.
+        If in_place is True, it will modify state and return it (instead of creating new one).
         """
         raise NotImplementedError()
 
