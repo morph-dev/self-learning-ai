@@ -14,6 +14,8 @@ _MIN_AI_PLAY_TIME_SEC = 0.2
 class BaseGamePanel(wx.Panel, GameService.Listener):
     def __init__(self, game_config, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.SetDoubleBuffered(True)
+
         self.game_config = game_config
         self.game_service = GameService(self.game_config.rules.create_game_engine())
         self.game_graphics_context = GameGraphicsContext(
