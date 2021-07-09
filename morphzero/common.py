@@ -1,99 +1,53 @@
-from collections import namedtuple
+from collections import Iterable
 
-from morphzero.game.base import Player
+import numpy as np
 
-
-class BoardCoordinates(namedtuple("BoardCoordinates", ["row", "column"])):
-    __slots__ = ()
-
-    def __add__(self, other):
-        return BoardCoordinates(row=self.row + other.row,
-                                column=self.column + other.column)
-
-    def __sub__(self, other):
-        return BoardCoordinates(row=self.row - other.row,
-                                column=self.column - other.column)
-
-    def __mul__(self, mul):
-        return BoardCoordinates(row=self.row * mul,
-                                column=self.column * mul)
-
-    def __neg__(self):
-        return BoardCoordinates(row=-self.row,
-                                column=-self.column)
+from morphzero.core.game import Player
 
 
-def _to_board_coordinates_list(directions):
-    return [BoardCoordinates(*t) for t in directions]
-
-
-class Directions:
-    RIGHT_AND_DOWN = _to_board_coordinates_list([
-        (0, 1), (1, 0)])
-    """Only → and ↓ directions."""
-
-    CARDINAL = _to_board_coordinates_list([
-        (-1, 0), (0, 1), (1, 0), (0, -1)])
-    """The 4 main directions (↑ → ↓ ←)."""
-
-    INTERCARDINAL = _to_board_coordinates_list([
-        (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
-    """The 8 main directions (↖ ↑ ↗ ← → ↙ ↓ ↘)."""
-
-    HALF_INTERCARDINAL = _to_board_coordinates_list([
-        (0, 1), (1, 1), (1, 0), (1, -1)])
-    """Only one direction from main 8 axis (→ ↘ ↓ ↙)."""
-
-    @classmethod
-    def __new__(cls, *args, **kwargs):
-        raise NotImplementedError("Can't create instance of the Directions class.")
-
-
-def is_inside_matrix(index, size):
-    """
-    Returns whether given index is inside matrix of a given size.
-    """
-    return (0 <= index[0] < size[0]) and (0 <= index[1] < size[1])
-
-
-def check_all_inside_and_match(board, start_coordinates, delta, length):
-    """
-    Returns whether all coordinates, starting with start_index and incrementing
-    by delta length times, have the same value in the board.
-    """
-    if not is_inside_matrix(start_coordinates, board.shape):
-        return False
-    value = board[start_coordinates]
-    return all(
-        is_inside_matrix(coordinates, board.shape) and value == board[coordinates]
-        for coordinates in generate_coordinates(start_coordinates, delta, length)
-    )
-
-
-def generate_coordinates(start_coordinates, delta, length):
-    """
-    Generates following coordinates:
-    start_coordinates, start_coordinates + delta, ..., start_coordinates + (length - 1) * delta
-    """
-    coordinates = start_coordinates
-    for i in range(length):
-        yield coordinates
-        coordinates += delta
-
-
-def print_board(board, no_player_symbol=" ", first_player_symbol="X", second_player_symbol="O"):
+def board_to_string(board: np.ndarray,
+                    no_player_symbol: str = " ",
+                    first_player_symbol: str = "X",
+                    second_player_symbol: str = "O",
+                    include_index: bool = False) -> str:
     """
     Prints human readable board with '|' and '-' as separators between cells and fills the rest
     using appropriate symbols.
     """
-    row_separator = "-" * (board.shape[1] * 4 - 1)
     player_map = {
         Player.NO_PLAYER: no_player_symbol,
         Player.FIRST_PLAYER: first_player_symbol,
         Player.SECOND_PLAYER: second_player_symbol,
     }
+    cell_width = 3
+    horizontal_cell_separator = "║"
+    vertical_cell_separator = "".center(cell_width, "═")
+    cross_separator = "╬"
 
-    def row_converter(row):
-        return '|'.join(f" {player_map[v]} " for v in row)
+    row_separator = cross_separator.join([vertical_cell_separator] * board.shape[1])
 
-    return ("\n" + row_separator + "\n").join(row_converter(row) for row in board)
+    def cell_converter(cell_value: Player) -> str:
+        return f"{player_map[cell_value]}".center(cell_width)
+
+    def row_converter(row: Iterable[Player]) -> str:
+        return horizontal_cell_separator.join(cell_converter(v) for v in row)
+
+    rows_str = [row_converter(row) for row in board]
+    matrix_str = [
+        rows_str[i // 2] if i % 2 == 0 else row_separator
+        for i in range(len(rows_str) * 2 - 1)
+    ]
+
+    if include_index:
+        column_index_row = " ".join(f"{c}".center(cell_width) for c in range(board.shape[1]))
+        matrix_str = [column_index_row] + matrix_str
+        matrix_row_prefix = [
+            f"{(matrix_row_index // 2):{cell_width}}" if matrix_row_index % 2 == 1 else " " * cell_width
+            for matrix_row_index in range(len(matrix_str))
+        ]
+        matrix_str = [
+            f"{row_prefix} {row_string}"
+            for row_prefix, row_string in zip(matrix_row_prefix, matrix_str)
+        ]
+
+    return "\n".join(matrix_str)

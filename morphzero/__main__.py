@@ -1,50 +1,43 @@
-import os.path
-
-from morphzero.game.connectfour import ConnectFourRules
-from morphzero.game.genericgomoku import GenericGomokuRules, GenericGomokuGameEngine
-from morphzero.training.common import LineConnectionHeuristics
-from morphzero.training.hashgomoku import HashGomokuTrainer, HashGomokuModel
-from morphzero.training.heuristicsmontecarlo import HeuristicsMonteCarloTreeSearch
-from morphzero.training.puremontecarlo import PureMonteCarloTreeSearch
+from morphzero.ai.algorithms.hash_policy import HashPolicyModel, HashPolicy
+from morphzero.ai.algorithms.min_max import MinMaxEvaluator
+from morphzero.ai.algorithms.pure_montecarlo import PureMonteCarloTreeSearch
+from morphzero.ai.evaluator import EvaluatorModel
+from morphzero.ai.trainer import Trainer
+from morphzero.core.game import Rules
+from morphzero.games.connectfour.game import ConnectFourRules
+from morphzero.games.genericgomoku.game import GenericGomokuRules
 from morphzero.ui.gameapp import GameApp
 from morphzero.ui.gameconfig import GameType
 from morphzero.ui.gameselection import GameConfigParams, PlayerConfigParams, GameSelectionState
 
 
-def train_model(path, iterations, learning_rate, exploration_rate):
-    if os.path.isfile(path):
-        model = HashGomokuModel.deserialize(path)
-    else:
-        model = HashGomokuModel()
-
-    rules = GenericGomokuRules(board_size=(3, 3), goal=3)
-    engine = GenericGomokuGameEngine(rules)
-    trainer = HashGomokuTrainer(engine, learning_rate=learning_rate, exploration_rate=exploration_rate, model=model)
-
-    print_at_ratio = 0.
-    for i in range(iterations):
-        if round(print_at_ratio * iterations) <= i:
-            print(f"Training {round(print_at_ratio * 100)}%")
-            print_at_ratio += 0.05
-        state = engine.new_game()
-        trainer.on_game_start()
-        while not state.is_game_over:
-            move = trainer.play_move(state)
-            state = engine.play_move(state, move)
-        trainer.on_game_end(state)
-
-    model.serialize(path)
+def train_hash_policy(rules: Rules,
+                      hash_policy_evaluator_config: HashPolicyModel.Config,
+                      trainer_config: Trainer.Config,
+                      path: str) -> None:
+    model = HashPolicyModel(rules, HashPolicy(), hash_policy_evaluator_config)
+    trainer = Trainer(rules, model, trainer_config)
+    trainer.train()
+    model.policy.store(path)
 
 
-def main():
-    # train_config = {
-    #     "iterations": 10000,
-    #     "learning_rate": 0.3,
-    #     "exploration_rate": 0.2,
-    # }
-    # path_format = "./models/hash_gomoku_i{iterations}_lr{learning_rate}_er{exploration_rate}.model"
-    # trainModel(path_format.format(**train_config), **train_config)
+def train() -> None:
+    # train_tic_tac_toe
+    number_of_games = 100000
+    learning_rate = 0.2
+    exploration_rate = 0.3
+    train_hash_policy(
+        rules=GenericGomokuRules.create_tic_tac_toe_rules(),
+        hash_policy_evaluator_config=HashPolicyModel.Config(learning_rate=learning_rate,
+                                                            exploration_rate=exploration_rate),
+        trainer_config=Trainer.Config(number_of_games=number_of_games,
+                                      print_ratio_increment=0.05),
+        path=f"./models/tik_tak_toe_hash_policy" +
+             f"_g{number_of_games}_lr{learning_rate}_er{exploration_rate}",
+    )
 
+
+def play() -> None:
     game_selection_state = GameSelectionState([
         GameConfigParams(
             "Tic Tac Toe",
@@ -53,21 +46,38 @@ def main():
             [
                 PlayerConfigParams("Human", None),
                 PlayerConfigParams(
-                    "i100000_lr0.1_er0.3",
-                    lambda: HashGomokuModel.deserialize("./models/hash_gomoku_i100000_lr0.1_er0.3.model")),
+                    "min-max",
+                    lambda rules: EvaluatorModel.create_with_best_move_picker(MinMaxEvaluator(rules))
+                ),
                 PlayerConfigParams(
-                    "i10000_lr0.3_er0.2",
-                    lambda: HashGomokuModel.deserialize("./models/hash_gomoku_i10000_lr0.3_er0.2.model")),
+                    "pure_mcts_s1000_er1.4_t1s",
+                    lambda rules: EvaluatorModel.create_with_best_move_picker(
+                        PureMonteCarloTreeSearch(
+                            rules,
+                            PureMonteCarloTreeSearch.Config(
+                                number_of_simulations=1000,
+                                exploration_rate=1.4,
+                                max_time_sec=1)))),
                 PlayerConfigParams(
-                    "pure_monte_carlo_r500_er1.4",
-                    lambda: PureMonteCarloTreeSearch(500, exploration_rate=1.4)),
+                    "pure_mcts_s3000_er1.4_t5s",
+                    lambda rules: EvaluatorModel.create_with_best_move_picker(
+                        PureMonteCarloTreeSearch(
+                            rules,
+                            PureMonteCarloTreeSearch.Config(
+                                number_of_simulations=3000,
+                                exploration_rate=1.4,
+                                max_time_sec=5)))),
+            ] + [
                 PlayerConfigParams(
-                    "heuristics_mcts_h[100;30;10];10_r100_s5",
-                    lambda: HeuristicsMonteCarloTreeSearch(
-                        heuristics=LineConnectionHeuristics([100, 30, 10], 10),
-                        rounds=100,
-                        rollout_steps=5,
-                    )),
+                    f"hash_policy_{config}",
+                    lambda rules: HashPolicyModel(
+                        rules,
+                        HashPolicy.load(f"./models/tik_tak_toe_hash_policy_{config}"),
+                        HashPolicyModel.Config(learning_rate=0, exploration_rate=0)))
+                for config in [
+                    "g10000_lr0.2_er0.2",
+                    "g100000_lr0.2_er0.3",
+                ]
             ]
         ),
         GameConfigParams(
@@ -85,23 +95,14 @@ def main():
             [
                 PlayerConfigParams("Human", None),
                 PlayerConfigParams(
-                    "heuristics_mcts_h[100;30;10];10_r100_s10_er1",
-                    lambda: HeuristicsMonteCarloTreeSearch(
-                        heuristics=LineConnectionHeuristics([100, 30, 10, 2], 10),
-                        rounds=100,
-                        rollout_steps=10,
-                        max_time_sec=10,
-                        exploration_rate=1,
-                    )),
-                PlayerConfigParams(
-                    "heuristics_mcts_h[100;30;10];10_r200_s5_er1",
-                    lambda: HeuristicsMonteCarloTreeSearch(
-                        heuristics=LineConnectionHeuristics([100, 30, 10, 2], 10),
-                        rounds=200,
-                        rollout_steps=5,
-                        max_time_sec=10,
-                        exploration_rate=1,
-                    )),
+                    "pure_mcts_s10000_er1.4_t20s",
+                    lambda rules: EvaluatorModel.create_with_best_move_picker(
+                        PureMonteCarloTreeSearch(
+                            rules,
+                            PureMonteCarloTreeSearch.Config(
+                                number_of_simulations=10000,
+                                exploration_rate=1.4,
+                                max_time_sec=20)))),
             ]
         )
     ])
@@ -110,4 +111,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    play()
+    # train()

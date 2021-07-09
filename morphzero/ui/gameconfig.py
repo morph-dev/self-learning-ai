@@ -1,5 +1,9 @@
-from collections import namedtuple
+from dataclasses import dataclass
 from enum import Enum, unique
+from typing import Optional
+
+from morphzero.ai.model import Model
+from morphzero.core.game import Player, Rules
 
 
 @unique
@@ -9,8 +13,28 @@ class GameType(Enum):
     CONNECT_FOUR = 3
 
 
-GameConfig = namedtuple("GameConfig",
-                        ["name", "type", "rules", "players"])
+@dataclass(frozen=True)
+class PlayerConfig:
+    name: str
+    ai_model: Optional[Model]
 
-PlayerConfig = namedtuple("PlayerConfig",
-                          ["name", "ai_player"])
+
+@dataclass(frozen=True)
+class GameConfig:
+    name: str
+    type: GameType
+    rules: Rules
+    players: dict[Player, PlayerConfig]
+
+    def __post_init__(self) -> None:
+        if self.type == GameType.TIC_TAC_TOE:
+            from morphzero.games.genericgomoku.game import GenericGomokuRules
+            assert isinstance(self.rules, GenericGomokuRules)
+        elif self.type == GameType.GOMOKU:
+            from morphzero.games.genericgomoku.game import GenericGomokuRules
+            assert isinstance(self.rules, GenericGomokuRules)
+        elif self.type == GameType.CONNECT_FOUR:
+            from morphzero.games.connectfour.game import ConnectFourRules
+            assert isinstance(self.rules, ConnectFourRules)
+        else:
+            raise ValueError(f"Unsupported Game type: {self.type}")
