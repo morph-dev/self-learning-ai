@@ -1,27 +1,29 @@
+from typing import Any, Optional
+
 import wx
 
-from morphzero.ui.connectfour import ConnectFourPanel
-from morphzero.ui.gameconfig import GameType
-from morphzero.ui.gameselection import GameSelectionDialog
-from morphzero.ui.genericgomoku import GenericGomokuPanel
+from morphzero.ui.basegamepanel import BaseGamePanel
+from morphzero.ui.gameconfig import GameType, GameConfig
+from morphzero.ui.gameselection import GameSelectionDialog, GameSelectionState
 
 
 class GameApp(wx.App):
-    def __init__(self, game_selection_state):
+    """The main app for playing the game."""
+
+    def __init__(self, game_selection_state: GameSelectionState):
         self.game_selection_state = game_selection_state
         super().__init__()
 
-    def OnInit(self):
+    def OnInit(self) -> bool:
         super().OnInit()
         # Let user choice a game.
         if self.open_select_game_dialog():
             game_frame = GameFrame(self)
             self.SetTopWindow(game_frame)
             game_frame.Show()
-
         return True
 
-    def open_select_game_dialog(self):
+    def open_select_game_dialog(self) -> bool:
         with GameSelectionDialog(self.game_selection_state, parent=None) as dialog:
             if dialog.ShowModal() == wx.ID_OK:
                 self.game_selection_state = dialog.panel.create_state()
@@ -31,19 +33,21 @@ class GameApp(wx.App):
 
 
 class GameFrame(wx.Frame):
-    def __init__(self, game_app, *args, **kw):
+    game_app: GameApp
+    game_panel: Optional[BaseGamePanel]
+
+    def __init__(self, game_app: GameApp, **kwargs: Any):
         self.game_app = game_app
         super().__init__(parent=None,
                          style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX),
-                         *args,
-                         **kw)
+                         **kwargs)
 
         self.init_menu_bar()
 
         self.game_panel = None
         self.init_game()
 
-    def init_menu_bar(self):
+    def init_menu_bar(self) -> None:
         game_menu = wx.Menu()
 
         change_game_item = game_menu.Append(wx.ID_ANY, "&Change game\tCtrl+C")
@@ -59,21 +63,24 @@ class GameFrame(wx.Frame):
         menu_bar.Append(game_menu, "&Game")
         self.SetMenuBar(menu_bar)
 
-    def on_change_game(self, _):
+    def on_change_game(self, _: wx.CommandEvent) -> None:
         if self.game_app.open_select_game_dialog():
-            self.game_panel.Destroy()
+            if self.game_panel:
+                self.game_panel.Destroy()
             self.init_game()
 
-    def on_restart_game(self, _):
-        self.game_panel.Destroy()
+    def on_restart_game(self, _: wx.CommandEvent) -> None:
+        if self.game_panel:
+            self.game_panel.Destroy()
         self.init_game()
 
-    def on_change_sides(self, _):
+    def on_change_sides(self, _: wx.CommandEvent) -> None:
         self.game_app.game_selection_state.swap_players()
-        self.game_panel.Destroy()
+        if self.game_panel:
+            self.game_panel.Destroy()
         self.init_game()
 
-    def init_game(self):
+    def init_game(self) -> None:
         game_config = self.game_app.game_selection_state.create_game_config()
         self.SetTitle(game_config.name)
 
@@ -83,17 +90,15 @@ class GameFrame(wx.Frame):
         sizer.Add(self.game_panel, wx.SizerFlags(1).Expand())
         self.SetSizerAndFit(sizer)
 
-    def create_game_panel(self, game_config):
-        def generic_gomoku_factory():
-            return GenericGomokuPanel(game_config, parent=self)
-
-        def connect_four_factory():
-            return ConnectFourPanel(game_config, parent=self)
-
+    def create_game_panel(self, game_config: GameConfig) -> BaseGamePanel:
         if game_config.type == GameType.TIC_TAC_TOE or \
                 game_config.type == GameType.GOMOKU:
-            return generic_gomoku_factory()
+            from morphzero.games.genericgomoku.ui.panel import GenericGomokuPanel
+            return GenericGomokuPanel(game_config=game_config, parent=self)
+
         elif game_config.type == GameType.CONNECT_FOUR:
-            return connect_four_factory()
+            from morphzero.games.connectfour.ui.panel import ConnectFourPanel
+            return ConnectFourPanel(game_config=game_config, parent=self)
+
         else:
             raise ValueError(f"Unexpected GameType: {game_config.type}")
