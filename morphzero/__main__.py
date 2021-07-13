@@ -47,14 +47,14 @@ def create_game_selection_state() -> GameSelectionState:
                                 max_time_sec=5)))),
             ] + [
                 PlayerConfigParams(
-                    f"hash_policy_{config}",
+                    config,
                     lambda rules: HashPolicyModel(
                         rules,
-                        HashPolicy.load(f"./models/tik_tak_toe_hash_policy_{config}"),
+                        HashPolicy.load(f"./models/tik_tak_toe_{config}"),
                         HashPolicyModel.Config.create_for_playing()))
                 for config in [
-                    "g10000_lr0.2_er0.2",
-                    "g100000_lr0.2_er0.3",
+                    "hash_policy_g10000_lr0.2_er0.2",
+                    "hash_policy_g100000_lr0.2_er0.3",
                 ]
             ]
         ),
