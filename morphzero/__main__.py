@@ -51,7 +51,7 @@ def create_game_selection_state() -> GameSelectionState:
                     lambda rules: HashPolicyModel(
                         rules,
                         HashPolicy.load(f"./models/tik_tak_toe_hash_policy_{config}"),
-                        HashPolicyModel.Config(learning_rate=0, exploration_rate=0)))
+                        HashPolicyModel.Config.create_for_playing()))
                 for config in [
                     "g10000_lr0.2_er0.2",
                     "g100000_lr0.2_er0.3",
@@ -105,8 +105,7 @@ def train() -> None:
         rules=GenericGomokuRules.create_tic_tac_toe_rules(),
         hash_policy_evaluator_config=HashPolicyModel.Config(learning_rate=learning_rate,
                                                             exploration_rate=exploration_rate),
-        trainer_config=Trainer.Config(number_of_games=number_of_games,
-                                      print_ratio_increment=0.05),
+        trainer_config=Trainer.Config(number_of_games=number_of_games),
         path=f"./models/tik_tak_toe_hash_policy" +
              f"_g{number_of_games}_lr{learning_rate}_er{exploration_rate}",
     )

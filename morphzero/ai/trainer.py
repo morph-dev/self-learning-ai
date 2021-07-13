@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from collections import deque
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from morphzero.ai.model import TrainingModel
-from morphzero.common import board_to_string
+from morphzero.common import print_progress_bar
 from morphzero.core.game import Rules, State
 
 
 class Trainer:
+    """Trainer trains the TrainingModel by making it play games against itself."""
     rules: Rules
     model: TrainingModel
     config: Trainer.Config
@@ -23,14 +24,9 @@ class Trainer:
 
     def train(self) -> None:
         engine = self.rules.create_engine()
-        print_ratio_increment = self.config.print_ratio_increment
-        next_print_ratio = 0.
 
         for game_index in range(self.config.number_of_games):
-            if print_ratio_increment:
-                if round(next_print_ratio * self.config.number_of_games) <= game_index:
-                    print(f"Training {round(next_print_ratio * 100)}%")
-                    next_print_ratio += print_ratio_increment
+            print_progress_bar(game_index + 1, self.config.number_of_games, "Training")
 
             states = deque[State]()
             state = engine.new_game()
@@ -44,5 +40,9 @@ class Trainer:
             self.model.train(state.result, states)
 
     class Config(NamedTuple):
+        """The configuration for Trainer.
+
+        Attributes:
+            number_of_games: The number of games to run.
+        """
         number_of_games: int
-        print_ratio_increment: Optional[float] = None
