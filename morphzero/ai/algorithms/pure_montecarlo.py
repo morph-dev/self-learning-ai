@@ -7,7 +7,7 @@ from collections import deque, Iterable
 from dataclasses import dataclass, field
 from typing import NamedTuple, Optional
 
-from morphzero.ai.algorithms.util import pick_one_of_highest, result_for_player
+from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
 from morphzero.core.game import Rules, State, Engine, Result, Move
 
@@ -134,6 +134,7 @@ class _Node:
 
     def expand(self, engine: Engine, discovered_states: dict[State, State]) -> None:
         """Called in order to expand node to it's children in the game tree."""
+
         def create_move_info(move: Move) -> _MoveInfo:
             next_state = engine.play_move(self.state, move)
             if next_state in discovered_states:
@@ -170,7 +171,7 @@ class _Node:
         def uct(move_info: _MoveInfo) -> float:
             return self.uct(move_info, exploration_rate)
 
-        return pick_one_of_highest(self.moves, uct)
+        return pick_one_with_highest_value(self.moves, uct)
 
     def uct(self, move_info: _MoveInfo, exploration_rate: float) -> float:
         """Upper Confidence bounds applied to Trees.

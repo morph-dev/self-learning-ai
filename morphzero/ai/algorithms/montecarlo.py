@@ -247,8 +247,6 @@ class _Node:
 
     def update(self, move_info: _MoveInfo, result_for_current_player: float) -> None:
         """Updates information for played moves. This should be called during simulations."""
-        if self.state.is_game_over:
-            return
         assert self.expanded_info, "Node never expanded!"
         move_info.update(result_for_current_player)
         self.expanded_info.total_exploration_count += 1
@@ -272,9 +270,9 @@ class _StateToNodeDefaultDict(dict[State, _Node]):
         super().__init__()
         self.mcts = mcts
 
-    def __missing__(self, state: object) -> _Node:
-        assert isinstance(state, State)
-        return _Node(state, self.mcts)
+    def __missing__(self, state: State) -> _Node:
+        self[state] = _Node(state, self.mcts)
+        return self[state]
 
 
 @dataclass
@@ -298,3 +296,4 @@ class _MoveInfo:
     def update(self, new_reward: float) -> None:
         """Updates the reward based on the result of the played simulation."""
         self.reward = (self.reward * self.exploration_count + new_reward) / (self.exploration_count + 1)
+        self.exploration_count += 1
