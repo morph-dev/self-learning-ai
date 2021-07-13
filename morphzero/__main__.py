@@ -1,7 +1,8 @@
 from typing import Any
 
-from morphzero.ai.algorithms.hash_policy import HashPolicyModel, HashPolicy
+from morphzero.ai.algorithms.hash_policy import HashPolicy, StateHashPolicy
 from morphzero.ai.algorithms.min_max import MinMaxEvaluator
+from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch
 from morphzero.ai.algorithms.pure_montecarlo import PureMonteCarloTreeSearch
 from morphzero.ai.evaluator import EvaluatorModel
 from morphzero.ai.trainer import Trainer
@@ -48,10 +49,31 @@ def create_game_selection_state() -> GameSelectionState:
             ] + [
                 PlayerConfigParams(
                     config,
-                    lambda rules: HashPolicyModel(
+                    lambda rules: HashPolicy(
                         rules,
-                        HashPolicy.load(f"./models/tik_tak_toe_{config}"),
-                        HashPolicyModel.Config.create_for_playing()))
+                        StateHashPolicy.load(f"./models/tik_tak_toe_{config}"),
+                        HashPolicy.Config.create_for_playing()))
+                for config in [
+                    "hash_policy_g10000_lr0.2_er0.2",
+                    "hash_policy_g100000_lr0.2_er0.3",
+                ]
+            ] + [
+                PlayerConfigParams(
+                    "mcts_s1000_exp1.4_temp0.5_t1s_" + config,
+                    lambda rules: MonteCarloTreeSearch(
+                        rules,
+                        HashPolicy(
+                            rules,
+                            StateHashPolicy.load(f"./models/tik_tak_toe_{config}"),
+                            HashPolicy.Config.create_for_playing()),
+                        MonteCarloTreeSearch.Config(
+                            number_of_simulations=1000,
+                            exploration_rate=1.4,
+                            temperature=0.5,
+                            max_time_sec=1,
+                        )
+                    )
+                )
                 for config in [
                     "hash_policy_g10000_lr0.2_er0.2",
                     "hash_policy_g100000_lr0.2_er0.3",
@@ -87,10 +109,10 @@ def create_game_selection_state() -> GameSelectionState:
 
 
 def train_hash_policy(rules: Rules,
-                      hash_policy_evaluator_config: HashPolicyModel.Config,
+                      hash_policy_evaluator_config: HashPolicy.Config,
                       trainer_config: Trainer.Config,
                       path: str) -> None:
-    model = HashPolicyModel(rules, HashPolicy(), hash_policy_evaluator_config)
+    model = HashPolicy(rules, StateHashPolicy(), hash_policy_evaluator_config)
     trainer = Trainer(rules, model, trainer_config)
     trainer.train()
     model.policy.store(path)
@@ -103,8 +125,8 @@ def train() -> None:
     exploration_rate = 0.3
     train_hash_policy(
         rules=GenericGomokuRules.create_tic_tac_toe_rules(),
-        hash_policy_evaluator_config=HashPolicyModel.Config(learning_rate=learning_rate,
-                                                            exploration_rate=exploration_rate),
+        hash_policy_evaluator_config=HashPolicy.Config(learning_rate=learning_rate,
+                                                       exploration_rate=exploration_rate),
         trainer_config=Trainer.Config(number_of_games=number_of_games),
         path=f"./models/tik_tak_toe_hash_policy" +
              f"_g{number_of_games}_lr{learning_rate}_er{exploration_rate}",

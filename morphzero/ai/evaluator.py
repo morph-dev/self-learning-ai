@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import Iterable
 from typing import TypeVar, NamedTuple
 
-from morphzero.ai.algorithms.util import pick_one_of_highest
+from morphzero.ai.algorithms.util import pick_one_index_with_highest_value
 from morphzero.ai.model import TrainingModel
 from morphzero.core.game import State, Rules, MoveOrMoveIndex, Result
 
@@ -51,6 +51,7 @@ class EvaluationResult(NamedTuple):
 
 class Evaluator(ABC):
     """Base class for evaluating game state."""
+
     @abstractmethod
     def supports_rules(self, rules: Rules) -> bool:
         """Whether this model supports given rules."""
@@ -104,6 +105,7 @@ class EvaluatorModel(TrainingModel, ABC):
 
     class MovePicker(ABC):
         """Picks a move from evaluation_result."""
+
         @abstractmethod
         def pick_move(self, evaluation_result: EvaluationResult) -> int:
             """Returns selected move."""
@@ -112,11 +114,10 @@ class EvaluatorModel(TrainingModel, ABC):
 
 class BestMovePicker(EvaluatorModel.MovePicker):
     """Picks move with the highest move_policy."""
+
     def pick_move(self, evaluation_result: EvaluationResult) -> int:
         move_policy = evaluation_result.move_policy
-        move_index = pick_one_of_highest(
-            range(len(move_policy)),
-            key=lambda i: move_policy[i])
+        move_index = pick_one_index_with_highest_value(move_policy)
         return move_index
 
 
@@ -125,6 +126,7 @@ class ProbabilityMovePicker(EvaluatorModel.MovePicker):
 
     Each move has a probability equal to move_policy.
     """
+
     def pick_move(self, evaluation_result: EvaluationResult) -> int:
         move_policy = evaluation_result.move_policy
         return random.choices(range(len(move_policy)), weights=move_policy)[0]

@@ -4,22 +4,25 @@ import pickle
 import random
 from typing import Iterable, NamedTuple
 
-from morphzero.ai.algorithms.util import result_for_player, pick_one_of_highest
+from morphzero.ai.algorithms.util import result_for_player, pick_one_index_with_highest_value
+from morphzero.ai.evaluator import Evaluator, EvaluationResult
 from morphzero.ai.model import TrainingModel
 from morphzero.core.game import State, Rules, Engine, Result, MoveOrMoveIndex
 
 
-class HashPolicy(dict[State, float]):
+class StateHashPolicy(dict[State, float]):
     """Stores policy for each observed state, from state.current_player's point of view.
 
     Unobserved states have policy of 0.5.
     """
 
-    def __missing__(self, key: State) -> float:
-        if key.is_game_over:
-            assert key.result
-            return result_for_player(key.current_player, key.result)
-        return 0.5
+    def __missing__(self, state: State) -> float:
+        if state.is_game_over:
+            assert state.result
+            self[state] = result_for_player(state.current_player, state.result)
+        else:
+            self[state] = 0.5
+        return self[state]
 
     def update_policy(self,
                       state: State,
@@ -42,7 +45,7 @@ class HashPolicy(dict[State, float]):
             pickle.dump(self, f)
 
     @classmethod
-    def load(cls, path: str) -> HashPolicy:
+    def load(cls, path: str) -> StateHashPolicy:
         """Loads the HashPolicy from a file with a given path."""
         with open(path, "rb") as f:
             hash_policy = pickle.load(f)
@@ -51,24 +54,24 @@ class HashPolicy(dict[State, float]):
             return hash_policy
 
 
-class HashPolicyModel(TrainingModel):
-    """Model that learns how to play a game by storing expected policy value for each move."""
+class HashPolicy(Evaluator, TrainingModel):
+    """Evaluator and Model that learns how to play a game by storing expected policy value for each move."""
     rules: Rules
     engine: Engine
-    policy: HashPolicy
-    config: HashPolicyModel.Config
+    policy: StateHashPolicy
+    config: HashPolicy.Config
 
     def __init__(self,
                  rules: Rules,
-                 policy: HashPolicy,
-                 config: HashPolicyModel.Config):
+                 policy: StateHashPolicy,
+                 config: HashPolicy.Config):
         self.rules = rules
         self.engine = rules.create_engine()
         self.policy = policy
         self.config = config
 
     def supports_rules(self, rules: Rules) -> bool:
-        return self.rules == rules
+        return rules == self.rules
 
     def play_move(self, state: State) -> MoveOrMoveIndex:
         if state.is_game_over:
@@ -81,16 +84,21 @@ class HashPolicyModel(TrainingModel):
             )
             return random.choice(playable_moves)
         else:
-            move_policy = tuple(
+            move_policy = self.evaluate(state).move_policy
+            move_index = pick_one_index_with_highest_value(move_policy)
+            return move_index
+
+    def evaluate(self, state: State) -> EvaluationResult:
+        return EvaluationResult(
+            win_rate=self.policy[state],
+            move_policy=tuple(
                 self.evaluate_move(state, move_index)
                 for move_index in range(self.rules.number_of_possible_moves())
             )
-            move_index = pick_one_of_highest(
-                range(len(move_policy)),
-                key=lambda i: move_policy[i])
-            return move_index
+        )
 
     def evaluate_move(self, state: State, move_index: int) -> float:
+        """Evaluates the move for the given state."""
         if not self.engine.is_move_playable(state, move_index):
             return 0
         next_state = self.engine.play_move(state, move_index)
@@ -114,5 +122,5 @@ class HashPolicyModel(TrainingModel):
         exploration_rate: float
 
         @classmethod
-        def create_for_playing(cls) -> HashPolicyModel.Config:
+        def create_for_playing(cls) -> HashPolicy.Config:
             return cls(learning_rate=0, exploration_rate=0)
