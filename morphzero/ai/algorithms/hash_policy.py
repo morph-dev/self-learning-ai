@@ -10,7 +10,7 @@ from morphzero.core.game import State, Rules, Engine, Result, MoveOrMoveIndex
 
 
 class HashPolicy(dict[State, float]):
-    """Stores policy for each observed state.
+    """Stores policy for each observed state, from state.current_player's point of view.
 
     Unobserved states have policy of 0.5.
     """
@@ -25,6 +25,13 @@ class HashPolicy(dict[State, float]):
                       state: State,
                       desired_policy: float,
                       learning_rate: float) -> None:
+        """Updates state policy.
+
+        Args:
+            state: State to update.
+            desired_policy: New desired policy.
+            learning_rate: The ration [0, 1] of difference to move towards desired policy.
+        """
         policy = self[state]
         policy += (desired_policy - policy) * learning_rate
         self[state] = policy
@@ -45,6 +52,7 @@ class HashPolicy(dict[State, float]):
 
 
 class HashPolicyModel(TrainingModel):
+    """Model that learns how to play a game by storing expected policy value for each move."""
     rules: Rules
     engine: Engine
     policy: HashPolicy
@@ -104,3 +112,7 @@ class HashPolicyModel(TrainingModel):
     class Config(NamedTuple):
         learning_rate: float
         exploration_rate: float
+
+        @classmethod
+        def create_for_playing(cls) -> HashPolicyModel.Config:
+            return cls(learning_rate=0, exploration_rate=0)

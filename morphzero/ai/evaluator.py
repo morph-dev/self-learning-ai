@@ -50,7 +50,7 @@ class EvaluationResult(NamedTuple):
 
 
 class Evaluator(ABC):
-
+    """Base class for evaluating game state."""
     @abstractmethod
     def supports_rules(self, rules: Rules) -> bool:
         """Whether this model supports given rules."""
@@ -63,10 +63,17 @@ class Evaluator(ABC):
 
     @abstractmethod
     def train(self, result: Result, states: Iterable[State]) -> None:
+        """Allows Evaluator to improve it's evaluation based on the result of the played game.
+
+        Args:
+            result: The result of the played game.
+            states: The states that happen in the game (in order).
+        """
         raise NotImplementedError()
 
 
 class EvaluatorModel(TrainingModel, ABC):
+    """Model that is based on the Evaluator."""
     evaluator: Evaluator
     move_picker: EvaluatorModel.MovePicker
 
@@ -80,14 +87,6 @@ class EvaluatorModel(TrainingModel, ABC):
     def play_move(self, state: State) -> MoveOrMoveIndex:
         evaluation_result = self.evaluator.evaluate(state)
 
-        # # TODO: remove
-        # from morphzero.common import board_to_string
-        # print(board_to_string(state.board))
-        # print(evaluation_result.win_rate)
-        # for i, p in enumerate(evaluation_result.move_policy):
-        #     print('\t', i, p)
-        # print()
-
         return self.move_picker.pick_move(evaluation_result)
 
     def train(self, result: Result, states: Iterable[State]) -> None:
@@ -95,19 +94,24 @@ class EvaluatorModel(TrainingModel, ABC):
 
     @classmethod
     def create_with_best_move_picker(cls, evaluator: Evaluator) -> EvaluatorModel:
+        """Creates the EvaluatorModel that picks the move based on highest move_policy."""
         return EvaluatorModel(evaluator, BestMovePicker())
 
     @classmethod
     def create_with_probability_move_picker(cls, evaluator: Evaluator) -> EvaluatorModel:
+        """Creates the EvaluatorModel that picks the move according to probability (move_policy)."""
         return EvaluatorModel(evaluator, ProbabilityMovePicker())
 
     class MovePicker(ABC):
+        """Picks a move from evaluation_result."""
         @abstractmethod
         def pick_move(self, evaluation_result: EvaluationResult) -> int:
+            """Returns selected move."""
             raise NotImplementedError()
 
 
 class BestMovePicker(EvaluatorModel.MovePicker):
+    """Picks move with the highest move_policy."""
     def pick_move(self, evaluation_result: EvaluationResult) -> int:
         move_policy = evaluation_result.move_policy
         move_index = pick_one_of_highest(
@@ -117,6 +121,10 @@ class BestMovePicker(EvaluatorModel.MovePicker):
 
 
 class ProbabilityMovePicker(EvaluatorModel.MovePicker):
+    """Picks the move according to probability.
+
+    Each move has a probability equal to move_policy.
+    """
     def pick_move(self, evaluation_result: EvaluationResult) -> int:
         move_policy = evaluation_result.move_policy
         return random.choices(range(len(move_policy)), weights=move_policy)[0]

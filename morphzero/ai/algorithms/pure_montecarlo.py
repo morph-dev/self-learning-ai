@@ -9,11 +9,24 @@ from typing import NamedTuple, Optional
 
 from morphzero.ai.algorithms.util import pick_one_of_highest, result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
-from morphzero.common import board_to_string
 from morphzero.core.game import Rules, State, Engine, Result, Move
 
 
 class PureMonteCarloTreeSearch(Evaluator):
+    """The Ai that evaluates the state of a game based on Pure MonteCarloTreeSearch.
+
+    The implementation is strongly based on https://en.wikipedia.org/wiki/Monte_Carlo_tree_search.
+
+    There is no heuristics or predictions involved. Playout of the game runs until end of game is reached.
+
+    Attributes:
+        rules: Rules of the game being played.
+        config: Learning configuration of the game.
+        engine: Engine created from rules.
+        nodes: Maps State to Node associated with it for quick access.
+        discovered_states: States that were visited during playouts. Used in order to keep only one copy of the same
+            state.
+    """
     rules: Rules
     config: PureMonteCarloTreeSearch.Config
 
@@ -53,10 +66,14 @@ class PureMonteCarloTreeSearch(Evaluator):
     def simulation(self, state: State) -> None:
         """Runs one MonteCarloTreeSearch simulation.
 
-        Selection: Iterates over discovered Nodes in the game tree, until new Node is discovered or game is over.
-        Expansion: Expands discovered Node (if applicable)
-        Rollout: Random playout of the game from the Discovered Node until game is over.
-        Backpropagation: Update nodes within selection with the outcome of the rollout stage.
+        It has following stages:
+            Selection: Iterates over discovered Nodes in the game tree, until new Node is discovered or game is over.
+
+            Expansion: Expands discovered Node (if applicable)
+
+            Rollout: Random playout of the game from the Discovered Node until game is over.
+
+            Backpropagation: Update nodes within selection with the outcome of the rollout stage.
         """
         node_moves = deque[tuple[_Node, _MoveInfo]]()
         # Selection & Expansion
@@ -91,12 +108,20 @@ class PureMonteCarloTreeSearch(Evaluator):
         raise TypeError("Training on played games not supported.")
 
     class Config(NamedTuple):
+        """The configuration for the PureMonteCarloTreeSearch."""
         number_of_simulations: int
         exploration_rate: float = 1.4
         max_time_sec: Optional[float] = 1
 
 
 class _Node:
+    """Represents and stores info associated with one node in the game tree.
+
+    Attributes:
+        state: The Game state.
+        total_exploration_count: The Number of times we explored this node.
+        moves: The tuple of _MoveInfo that represent edges between nodes in the game tree.
+    """
     state: State
     total_exploration_count: int
     moves: tuple[_MoveInfo, ...]
@@ -108,6 +133,7 @@ class _Node:
         self.moves = ()
 
     def expand(self, engine: Engine, discovered_states: dict[State, State]) -> None:
+        """Called in order to expand node to it's children in the game tree."""
         def create_move_info(move: Move) -> _MoveInfo:
             next_state = engine.play_move(self.state, move)
             if next_state in discovered_states:
@@ -133,6 +159,11 @@ class _Node:
         }
 
     def play_move(self, exploration_rate: float) -> _MoveInfo:
+        """Plays the move according to exploration_rate.
+
+        Args:
+            exploration_rate: Lower value means that win_rate of moves matters more than exploring other moves.
+        """
         assert not self.state.is_game_over, "Can't play a move from game_over state."
         assert self.moves, "Moves never initialized."
 
@@ -154,22 +185,8 @@ class _Node:
         exploration_value = math.sqrt(math.log(1 + self.total_exploration_count) / (1 + move_info.exploration_count))
         return expansion_value + exploration_rate * exploration_value
 
-    def uct2(self, move_info: _MoveInfo, exploration_rate: float) -> float:
-        """Alternative Upper Confidence bounds applied to Trees.
-
-        Returns the score for exploring given move.
-        """
-        if move_info.exploration_count > 0:
-            expansion_value = move_info.win_ratio
-            exploration_value = math.sqrt(math.log(self.total_exploration_count) / move_info.exploration_count)
-        else:
-            # Move never explored.
-            # Use as calculations as if it was explored once and it was a draw.
-            expansion_value = 0.5
-            exploration_value = math.sqrt(math.log(self.total_exploration_count))
-        return expansion_value + exploration_rate * exploration_value
-
     def update(self, result: Result, move_info: _MoveInfo) -> None:
+        """Updates win_rate based on the result of the simulated game."""
         result_value = result_for_player(self.state.current_player, result)
         self.total_exploration_count += 1
         move_info.exploration_count += 1
@@ -181,6 +198,14 @@ class _Node:
 
 @dataclass
 class _MoveInfo:
+    """Stores info regarding playing moves.
+
+    Attributes:
+        move_index: The index of the move in the original state.
+        next_state: The state achieved after playing the move.
+        exploration_wins: Number of simulations the ended in a win for state.current_player. Draw adds 0.5 to it.
+        exploration_count: Number of simulations for this move.
+    """
     move_index: int
     next_state: State = field(repr=False)
     exploration_wins: float = 0
@@ -190,7 +215,7 @@ class _MoveInfo:
     def win_ratio(self) -> float:
         """Returns exploration_win / exploration_count.
 
-        If exploration_count is 0, returns 1.
+        If exploration_count is 0, returns 0.5.
         """
         if self.exploration_count == 0:
             return 0.5
