@@ -51,3 +51,26 @@ def board_to_string(board: np.ndarray,
         ]
 
     return "\n".join(matrix_str)
+
+
+def print_progress_bar(
+        iteration: int,
+        total: int,
+        prefix: str = "",
+        suffix: str = "",
+        decimals: int = 1,
+        length: int = 100,
+        fill: str = "█",
+        empty: str = "-",
+        print_end: str = "") -> None:
+    """Call in a loop to create terminal progress bar."""
+    percent_float = 100 * (iteration / float(total))
+    percent_str = f"{percent_float:.{str(decimals)}f}"
+    filled_length = int(length * iteration // total)
+    bar = (fill * filled_length) + (empty * (length - filled_length))
+
+    # Print New Line on Complete
+    if iteration == total:
+        print_end += "\n"
+
+    print(f"\r{prefix} |{bar}| {percent_str}% {suffix}", end=print_end)
