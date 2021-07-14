@@ -18,9 +18,9 @@ def result_for_player(player: Player, result: Result) -> float:
     if winner == Player.NO_PLAYER:
         return 0.5
     elif winner == player:
-        return 1
+        return 1.
     elif winner == player.other_player:
-        return 0
+        return 0.
     else:
         raise ValueError(f"Invalid winner: {winner}")
 
