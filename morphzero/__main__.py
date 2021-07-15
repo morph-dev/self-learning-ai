@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Any, Callable
 
 from morphzero.ai.algorithms.hash_policy import HashPolicy, StateHashPolicy
