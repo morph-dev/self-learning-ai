@@ -46,7 +46,7 @@ class GenericGomokuPanel(BaseGamePanel, MatrixGameBoard.OnClickCallback):
 
     def show_result(self, state: State) -> None:
         assert state.is_game_over and state.result
-        result_message = get_result_message(state.result.winner, self.game_config.players)
+        result_message = get_result_message(state.result, self.game_config.players)
         wx.MessageDialog(self, result_message).ShowModal()
 
     def on_click(self, board_coordinates: MatrixBoardCoordinates) -> None:

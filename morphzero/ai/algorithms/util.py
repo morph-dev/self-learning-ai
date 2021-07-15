@@ -14,15 +14,14 @@ def result_for_player(player: Player, result: Result) -> float:
     """
     if player not in [Player.FIRST_PLAYER, Player.SECOND_PLAYER]:
         raise ValueError(f"Invalid player: {player}")
-    winner = result.winner
-    if winner == Player.NO_PLAYER:
+    if result.is_draw:
         return 0.5
-    elif winner == player:
+    elif result.winner == player:
         return 1.
-    elif winner == player.other_player:
+    elif result.winner == player.other_player:
         return 0.
     else:
-        raise ValueError(f"Invalid winner: {winner}")
+        raise ValueError(f"Invalid winner: {result.winner}")
 
 
 T = TypeVar("T")

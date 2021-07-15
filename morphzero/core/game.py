@@ -42,6 +42,10 @@ class Result:
     winner: Player
     resignation: bool = False
 
+    @property
+    def is_draw(self) -> bool:
+        return self.winner == Player.NO_PLAYER
+
 
 @dataclass(frozen=True)
 class State:
