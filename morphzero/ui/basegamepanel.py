@@ -79,7 +79,10 @@ class BaseGamePanel(wx.Panel, GameServiceListener):
         name_decorator = ColorPlayerNameDecorator(self.game_graphics_context)
 
         def create_player_name_static_text(player: Player) -> wx.StaticText:
-            player_name = wx.StaticText(self, label=self.game_config.players[player].name)
+            label = self.game_config.players[player].name
+            if len(label) > 30:
+                label = label[:30] + "…"
+            player_name = wx.StaticText(self, label=label)
             name_decorator.decorate_player_label(player, player_name)
             return player_name
 
