@@ -5,7 +5,7 @@ import random
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import NamedTuple, Iterable, Optional
+from typing import NamedTuple, Iterable, Optional, Callable
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
 from morphzero.ai.evaluator import Evaluator
@@ -103,6 +103,12 @@ class MonteCarloTreeSearch(TrainingModel):
         # Backpropagation
         for node, move_info in node_moves:
             node.update(move_info, result_per_player[node.state.current_player])
+
+    @classmethod
+    def factory(cls,
+                evaluator_factory: Callable[[Rules], Evaluator],
+                config: MonteCarloTreeSearch.Config) -> Callable[[Rules], MonteCarloTreeSearch]:
+        return lambda rules: MonteCarloTreeSearch(rules, evaluator_factory(rules), config)
 
     class Config(NamedTuple):
         """The configuration of the MonteCarloTreeSearch algorithm.

@@ -47,6 +47,11 @@ class Result:
         return self.winner == Player.NO_PLAYER
 
 
+class Board:
+    """The board state of the game."""
+    pass
+
+
 @dataclass(frozen=True)
 class State:
     """Uniquely represents the state of the game.
@@ -57,9 +62,11 @@ class State:
         current_player: The Player that is supposed to make next action (If game is over, it should be opposite from the
             player who made the last move).
         result: The Result of the game if the game is over, otherwise None.
+        board: The status of the board.
     """
     current_player: FIRST_OR_SECOND_PLAYER
     result: Optional[Result]
+    board: Board
 
     @property
     def is_game_over(self) -> bool:

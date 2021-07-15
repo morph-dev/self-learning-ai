@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pickle
 import random
-from typing import Iterable, NamedTuple
+from typing import Iterable, NamedTuple, Callable, Optional
 
 from morphzero.ai.algorithms.util import result_for_player, pick_one_index_with_highest_value
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
@@ -116,6 +116,13 @@ class HashPolicy(Evaluator, TrainingModel):
                 state,
                 result_for_player(state.current_player, result),
                 self.config.learning_rate)
+
+    @classmethod
+    def factory(cls, path: str, config: Optional[HashPolicy.Config] = None) -> Callable[[Rules], HashPolicy]:
+        return lambda rules: cls(
+            rules,
+            StateHashPolicy.load(path),
+            config if config else HashPolicy.Config.create_for_playing())
 
     class Config(NamedTuple):
         learning_rate: float

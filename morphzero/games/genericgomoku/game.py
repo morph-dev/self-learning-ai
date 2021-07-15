@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from typing import Union, Iterator
 
-import numpy as np
-
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardResult, ConnectOnMatrixBoardState, \
     ConnectOnMatrixBoardRules, ConnectOnMatrixBoardEngine, ConnectOnMatrixBoardMove
-from morphzero.core.common.matrix_board import MatrixBoardSize, MatrixBoardCoordinates
+from morphzero.core.common.matrix_board import MatrixBoardSize, MatrixBoard
 from morphzero.core.game import Player
 
 
@@ -47,7 +45,7 @@ class GenericGomokuEngine(ConnectOnMatrixBoardEngine):
         return GenericGomokuState(
             current_player=Player.FIRST_PLAYER,
             result=None,
-            board=np.full(self.rules.board_size, Player.NO_PLAYER))
+            board=MatrixBoard.create_empty(self.rules.board_size, Player.NO_PLAYER))
 
     def create_move_from_move_index(self, move_index: int) -> GenericGomokuMove:
         return GenericGomokuMove(
@@ -58,14 +56,12 @@ class GenericGomokuEngine(ConnectOnMatrixBoardEngine):
     def playable_moves(self, state: GenericGomokuState) -> Iterator[GenericGomokuMove]:  # type: ignore[override]
         if state.is_game_over:
             return []
-        for row in range(self.rules.board_size.rows):
-            for column in range(self.rules.board_size.columns):
-                if state.board[row, column] == Player.NO_PLAYER:
-                    coordinates = MatrixBoardCoordinates(row, column)
-                    yield GenericGomokuMove(
-                        move_index=self.get_move_index_for_coordinates(coordinates),
-                        resign=False,
-                        coordinates=coordinates)
+        for coordinates in state.board:
+            if state.board[coordinates] == Player.NO_PLAYER:
+                yield GenericGomokuMove(
+                    move_index=self.get_move_index_for_coordinates(coordinates),
+                    resign=False,
+                    coordinates=coordinates)
         yield GenericGomokuMove(
             move_index=self.get_move_index_for_resign(),
             resign=True,
@@ -85,12 +81,10 @@ class GenericGomokuEngine(ConnectOnMatrixBoardEngine):
             move = self.create_move_from_move_index(move)
         else:
             self.validate_move(move)
-        coordinates = move.coordinates
-        if coordinates is None:
+        if move.coordinates is None:
             # resign move
             return True
-        board_player: Player = state.board[move.coordinates]
-        return board_player == Player.NO_PLAYER
+        return state.board[move.coordinates] == Player.NO_PLAYER
 
     def play_move(  # type: ignore[override]
             self, state: GenericGomokuState, move: MoveOrMoveIndex) -> GenericGomokuState:
@@ -98,7 +92,7 @@ class GenericGomokuEngine(ConnectOnMatrixBoardEngine):
             move = self.create_move_from_move_index(move)
         if not self.is_move_playable(state, move):
             raise ValueError(f"Move {move} is not playable.")
-        board = state.board.copy()
+        board = state.board
         if move.resign:
             return GenericGomokuState(
                 current_player=state.current_player.other_player,
@@ -106,16 +100,9 @@ class GenericGomokuEngine(ConnectOnMatrixBoardEngine):
                     winner=state.current_player.other_player),
                 board=board)
         assert move.coordinates
-        board[move.coordinates] = state.current_player
+        board = board.replace({move.coordinates: state.current_player})
         result = GenericGomokuResult.create_from_board_and_last_move(self.rules, board, move.coordinates)
-        if result:
-            # game over
-            return GenericGomokuState(
-                current_player=state.current_player.other_player,
-                result=result,
-                board=board)
-        else:
-            return GenericGomokuState(
-                current_player=state.current_player.other_player,
-                result=None,
-                board=board)
+        return GenericGomokuState(
+            current_player=state.current_player.other_player,
+            result=result,
+            board=board)

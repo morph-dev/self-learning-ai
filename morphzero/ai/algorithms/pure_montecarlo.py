@@ -5,7 +5,7 @@ import random
 import time
 from collections import deque, Iterable
 from dataclasses import dataclass, field
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Callable
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
@@ -106,6 +106,10 @@ class PureMonteCarloTreeSearch(Evaluator):
 
     def train(self, result: Result, states: Iterable[State]) -> None:
         raise TypeError("Training on played games not supported.")
+
+    @classmethod
+    def factory(cls, config: PureMonteCarloTreeSearch.Config) -> Callable[[Rules], PureMonteCarloTreeSearch]:
+        return lambda rules: PureMonteCarloTreeSearch(rules, config)
 
     class Config(NamedTuple):
         """The configuration for the PureMonteCarloTreeSearch."""

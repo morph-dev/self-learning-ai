@@ -7,8 +7,8 @@ from typing import Optional, DefaultDict, Union, Iterator
 import numpy as np
 
 from morphzero.core.common import matrix_board
-from morphzero.core.common.matrix_board import MatrixBoardCoordinates, MatrixBoardSize
-from morphzero.core.game import Rules, State, Player, Result, Move, Engine, FIRST_OR_SECOND_PLAYER
+from morphzero.core.common.matrix_board import MatrixBoardCoordinates, MatrixBoardSize, MatrixBoard
+from morphzero.core.game import Rules, State, Player, Result, Move, Engine
 
 
 @dataclass(frozen=True)
@@ -27,7 +27,9 @@ class ConnectOnMatrixBoardResult(Result):
 
     @classmethod
     def create_from_board(
-            cls, rules: ConnectOnMatrixBoardRules, board: np.ndarray
+            cls,
+            rules: ConnectOnMatrixBoardRules,
+            board: MatrixBoard
     ) -> Optional[ConnectOnMatrixBoardResult]:
         """Checks the board and creates the result object accordingly.
 
@@ -38,20 +40,19 @@ class ConnectOnMatrixBoardResult(Result):
         Returns:
             None if game is not over, otherwise result.
         """
-        board_size = rules.board_size
-        if board.size != board_size:
-            raise ValueError(f"The rules.board_size ({board_size}) and board.size ({board.size}) don't match.")
+        if board.size != rules.board_size:
+            raise ValueError(f"The rules.board_size ({rules.board_size}) and board.size ({board.size}) don't match.")
 
         # → ↘ ↓ ↙
         directions = matrix_board.HALF_INTERCARDINAL_DIRECTIONS
         # count[player][coordinate][direction_index] ->
         # how many consecutive cells ending with 'coordinate' in 'direction_index' have 'player' value.
         count = DefaultDict[Player, np.ndarray](lambda: np.zeros(
-            shape=(board_size.rows, board_size.columns, len(directions)),
+            shape=(board.size.rows, board.size.columns, len(directions)),
             dtype=int))
         has_valid_moves = False
-        for row in range(board_size.rows):
-            for column in range(board_size.columns):
+        for row in range(board.size.rows):
+            for column in range(board.size.columns):
                 coordinate = MatrixBoardCoordinates(row, column)
                 player = board[coordinate]
                 if player == Player.NO_PLAYER:
@@ -60,7 +61,7 @@ class ConnectOnMatrixBoardResult(Result):
 
                 count[player][coordinate].fill(1)
                 for direction_index, direction in enumerate(directions):
-                    if (coordinate - direction) in board_size:
+                    if (coordinate - direction) in board:
                         count[player][coordinate][direction] += count[player][coordinate - direction][direction]
                     if count[player][coordinate][direction] >= rules.goal:
                         winning_coordinates = tuple(
@@ -76,7 +77,10 @@ class ConnectOnMatrixBoardResult(Result):
 
     @classmethod
     def create_from_board_and_last_move(
-            cls, rules: ConnectOnMatrixBoardRules, board: np.ndarray, last_move_coordinates: MatrixBoardCoordinates
+            cls,
+            rules: ConnectOnMatrixBoardRules,
+            board: MatrixBoard,
+            last_move_coordinates: MatrixBoardCoordinates
     ) -> Optional[ConnectOnMatrixBoardResult]:
         """Creates the result based on last move.
 
@@ -91,9 +95,8 @@ class ConnectOnMatrixBoardResult(Result):
         Returns:
             None if game is not over, otherwise result.
         """
-        board_size = rules.board_size
-        if board.shape != board_size:
-            raise ValueError(f"The rules.board_size ({board_size}) and board.size ({board.size}) don't match.")
+        if board.size != rules.board_size:
+            raise ValueError(f"The rules.board_size ({rules.board_size}) and board.size ({board.size}) don't match.")
 
         player = board[last_move_coordinates]
         if player == Player.NO_PLAYER:
@@ -109,7 +112,7 @@ class ConnectOnMatrixBoardResult(Result):
                 move_count = 0
                 while True:
                     new_result = result + d
-                    if new_result not in board_size or board[new_result] != player:
+                    if new_result not in board or board[new_result] != player:
                         break
                     result = new_result
                     move_count += 1
@@ -125,7 +128,11 @@ class ConnectOnMatrixBoardResult(Result):
                 return cls(winner=player,
                            winning_coordinates=winning_coordinates)
 
-        if (board == Player.NO_PLAYER).any():
+        has_empty = any(
+            any(value == Player.NO_PLAYER for value in row)
+            for row in board.rows
+        )
+        if has_empty:
             return None
         else:
             return cls(winner=Player.NO_PLAYER)
@@ -133,27 +140,9 @@ class ConnectOnMatrixBoardResult(Result):
 
 @dataclass(frozen=True)
 class ConnectOnMatrixBoardState(State):
-    """The base class for game states for games that are played on a matrix board.
-
-    Attributes:
-        board: The status of the board.
-    """
+    """The base class for game states for games that are played on a matrix board with a goal of connecting pieces."""
     result: Optional[ConnectOnMatrixBoardResult]
-    board: np.ndarray
-
-    def __post_init__(self) -> None:
-        self.board.setflags(write=False)
-
-    def _key(self) -> tuple[FIRST_OR_SECOND_PLAYER, Optional[ConnectOnMatrixBoardResult], tuple[Player, ...]]:
-        return self.current_player, self.result, tuple(self.board.flatten())
-
-    def __hash__(self) -> int:
-        return hash(self._key())
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ConnectOnMatrixBoardState):
-            return False
-        return self._key() == other._key()
+    board: MatrixBoard[Player]
 
 
 @dataclass(frozen=True)
@@ -224,7 +213,7 @@ class ConnectOnMatrixBoardEngine(Engine, ABC):
         Raises:
             ValueError: When coordinates are outside rules.board_size
         """
-        if coordinates not in self.rules.board_size:
+        if not self.rules.board_size.contains(coordinates):
             raise ValueError(f"Invalid coordinates {coordinates}.")
         return coordinates.row * self.rules.board_size.columns + coordinates.column
 

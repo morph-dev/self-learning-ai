@@ -87,7 +87,7 @@ class MatrixGameBoard(wx.Panel):
         cell_size = self.get_cell_size()
         for row in range(board_size.rows):
             for column in range(board_size.columns):
-                painter = self.painters.get(state.board[row, column])
+                painter = self.painters.get(state.board[MatrixBoardCoordinates(row, column)])
                 if painter:
                     transformation = gc.CreateMatrix()
                     transformation.Scale(cell_size.GetWidth(), cell_size.GetHeight())

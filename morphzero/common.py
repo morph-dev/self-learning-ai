@@ -1,11 +1,10 @@
 from collections import Iterable
 
-import numpy as np
-
+from morphzero.core.common.matrix_board import MatrixBoard
 from morphzero.core.game import Player
 
 
-def board_to_string(board: np.ndarray,
+def board_to_string(board: MatrixBoard,
                     no_player_symbol: str = " ",
                     first_player_symbol: str = "X",
                     second_player_symbol: str = "O",
@@ -23,8 +22,7 @@ def board_to_string(board: np.ndarray,
     horizontal_cell_separator = "║"
     vertical_cell_separator = "".center(cell_width, "═")
     cross_separator = "╬"
-
-    row_separator = cross_separator.join([vertical_cell_separator] * board.shape[1])
+    row_separator = cross_separator.join([vertical_cell_separator] * board.size.columns)
 
     def cell_converter(cell_value: Player) -> str:
         return f"{player_map[cell_value]}".center(cell_width)
@@ -32,14 +30,14 @@ def board_to_string(board: np.ndarray,
     def row_converter(row: Iterable[Player]) -> str:
         return horizontal_cell_separator.join(cell_converter(v) for v in row)
 
-    rows_str = [row_converter(row) for row in board]
+    rows_str = [row_converter(row) for row in board.rows]
     matrix_str = [
         rows_str[i // 2] if i % 2 == 0 else row_separator
         for i in range(len(rows_str) * 2 - 1)
     ]
 
     if include_index:
-        column_index_row = " ".join(f"{c}".center(cell_width) for c in range(board.shape[1]))
+        column_index_row = " ".join(f"{c}".center(cell_width) for c in range(board.size.columns))
         matrix_str = [column_index_row] + matrix_str
         matrix_row_prefix = [
             f"{(matrix_row_index // 2):{cell_width}}" if matrix_row_index % 2 == 1 else " " * cell_width

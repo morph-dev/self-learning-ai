@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Iterable
+from dataclasses import dataclass
+from typing import NamedTuple, Iterable, TypeVar, Generic, Mapping, Iterator
+
+from morphzero.core.game import Board
+
+T = TypeVar("T")
 
 
 class MatrixBoardSize(NamedTuple):
     rows: int
     columns: int
 
-    def __contains__(self, coordinates: object) -> bool:
-        if not isinstance(coordinates, MatrixBoardCoordinates):
-            return False
+    def contains(self, coordinates: MatrixBoardCoordinates) -> bool:
         return (0 <= coordinates.row < self.rows) and (0 <= coordinates.column < self.columns)
 
 
@@ -59,3 +62,49 @@ INTERCARDINAL_DIRECTIONS: tuple[MatrixBoardCoordinates, ...] = _to_board_coordin
 HALF_INTERCARDINAL_DIRECTIONS: tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
     [(0, 1), (1, 1), (1, 0), (1, -1)])
 """Only one direction from main 8 axis (→ ↘ ↓ ↙)."""
+
+
+@dataclass(frozen=True)
+class MatrixBoard(Board, Mapping[MatrixBoardCoordinates, T], Generic[T]):
+    data: tuple[tuple[T, ...], ...]
+
+    @property
+    def rows(self) -> tuple[tuple[T, ...], ...]:
+        return self.data
+
+    @property
+    def size(self) -> MatrixBoardSize:
+        return MatrixBoardSize(rows=len(self.data), columns=len(self.data[0]))
+
+    def __contains__(self, coordinates: object) -> bool:
+        if not isinstance(coordinates, MatrixBoardCoordinates):
+            return False
+        return self.size.contains(coordinates)
+
+    def __getitem__(self, coordinates: MatrixBoardCoordinates) -> T:
+        if coordinates in self:
+            return self.data[coordinates.row][coordinates.column]
+        else:
+            raise KeyError(f"Coordinates {coordinates} outside bounds {self.size}.")
+
+    def __len__(self) -> int:
+        size = self.size
+        return size.rows * size.columns
+
+    def __iter__(self) -> Iterator[MatrixBoardCoordinates]:
+        size = self.size
+        for row in range(size.rows):
+            for column in range(size.columns):
+                yield MatrixBoardCoordinates(row, column)
+
+    @classmethod
+    def create_empty(cls, board_size: MatrixBoardSize, default_value: T) -> MatrixBoard[T]:
+        row = (default_value,) * board_size.columns
+        data = (row,) * board_size.rows
+        return cls(data)
+
+    def replace(self, replacements: dict[MatrixBoardCoordinates, T]) -> MatrixBoard[T]:
+        new_data = list(list(row) for row in self.data)
+        for coordinates in replacements:
+            new_data[coordinates.row][coordinates.column] = replacements[coordinates]
+        return type(self)(tuple(tuple(row) for row in new_data))
