@@ -16,125 +16,71 @@ from morphzero.ui.gameconfig import GameType
 from morphzero.ui.gameselection import GameConfigParams, PlayerConfigParams, GameSelectionState
 
 
-def create_game_selection_state() -> GameSelectionState:
-    def evaluator_model_factory(evaluator_factory: Callable[[Rules], Evaluator]) -> Callable[[Rules], EvaluatorModel]:
-        return lambda rules: EvaluatorModel.create_with_best_move_picker(evaluator_factory(rules))
-
-    def hash_policy_factory(path: str) -> Callable[[Rules], HashPolicy]:
-        return lambda rules: HashPolicy(
-            rules,
-            StateHashPolicy.load(path),
-            HashPolicy.Config.create_for_playing())
-
-    def pure_mcts_factory(config: PureMonteCarloTreeSearch.Config) -> Callable[[Rules], PureMonteCarloTreeSearch]:
-        return lambda rules: PureMonteCarloTreeSearch(rules, config)
-
-    def mcts_factory(
-            evaluator_factory: Callable[[Rules], Evaluator],
-            config: MonteCarloTreeSearch.Config
-    ) -> Callable[[Rules], MonteCarloTreeSearch]:
-        return lambda rules: MonteCarloTreeSearch(rules, evaluator_factory(rules), config)
-
-    return GameSelectionState([
-        GameConfigParams(
-            "Tic Tac Toe",
-            GameType.TIC_TAC_TOE,
-            GenericGomokuRules.create_tic_tac_toe_rules(),
-            [
-                PlayerConfigParams("Human", None),
-                PlayerConfigParams(
-                    "pure_mcts_s1000_er1.4_t1s",
-                    evaluator_model_factory(
-                        pure_mcts_factory(
-                            PureMonteCarloTreeSearch.Config(
-                                number_of_simulations=1000,
-                                exploration_rate=1.4,
-                                max_time_sec=1)))),
-                PlayerConfigParams(
-                    "pure_mcts_s3000_er1.4_t5s",
-                    evaluator_model_factory(
-                        pure_mcts_factory(
-                            PureMonteCarloTreeSearch.Config(
-                                number_of_simulations=3000,
-                                exploration_rate=1.4,
-                                max_time_sec=5)))),
-            ] + [
-                PlayerConfigParams(
-                    config,
-                    hash_policy_factory(f"./models/tic_tac_toe_{config}"))
-                for config in [
-                    "hash_policy_min_max",
-                    "hash_policy_g10000_lr0.2_er0.3",
-                    "hash_policy_g100000_lr0.2_er0.3",
-                ]
-            ] + [
-                PlayerConfigParams(
-                    "mcts_s1000_exp1.4_temp0.1_t1s_" + config,
-                    mcts_factory(
-                        hash_policy_factory(f"./models/tic_tac_toe_{config}"),
-                        MonteCarloTreeSearch.Config(
-                            number_of_simulations=1000,
-                            exploration_rate=1.4,
-                            temperature=0.1,
-                            max_time_sec=1,
-                        )
-                    )
-                )
-                for config in [
-                    "hash_policy_g10000_lr0.2_er0.3",
-                    "hash_policy_g100000_lr0.2_er0.3",
-                ]
-            ]
-        ),
-        GameConfigParams(
-            "Gomoku",
-            GameType.GOMOKU,
-            GenericGomokuRules.create_gomoku_rules(),
-            [
-                PlayerConfigParams("Human", None),
-            ]
-        ),
-        GameConfigParams(
-            "Connect 4",
-            GameType.CONNECT_FOUR,
-            ConnectFourRules.create_default_rules(),
-            [
-                PlayerConfigParams("Human", None),
-                PlayerConfigParams(
-                    "pure_mcts_s10000_er1.4_t20s",
-                    evaluator_model_factory(
-                        pure_mcts_factory(
-                            PureMonteCarloTreeSearch.Config(
-                                number_of_simulations=10000,
-                                exploration_rate=1.4,
-                                max_time_sec=20)))),
-            ]
-        )
-    ])
-
-
-def train_hash_policy(rules: Rules,
-                      hash_policy_evaluator_config: HashPolicy.Config,
-                      trainer_config: Trainer.Config,
-                      path: str) -> None:
+def train_hash_policy(
+        rules: Rules,
+        hash_policy_evaluator_config: HashPolicy.Config,
+        trainer_config: Trainer.Config,
+        path: str) -> None:
     model = HashPolicy(rules, StateHashPolicy(), hash_policy_evaluator_config)
     trainer = Trainer(rules, model, trainer_config)
     trainer.train()
     model.policy.store(path)
 
 
+def train_mcts_with_hash_policy(
+        rules: Rules,
+        mcts_config: MonteCarloTreeSearch.Config,
+        hash_policy_config: HashPolicy.Config,
+        trainer_config: Trainer.Config,
+        path: str) -> None:
+    hash_policy = HashPolicy(rules, StateHashPolicy(), hash_policy_config)
+    model = MonteCarloTreeSearch(
+        rules,
+        hash_policy,
+        mcts_config
+    )
+    trainer = Trainer(rules, model, trainer_config)
+    trainer.train()
+    hash_policy.policy.store(path)
+
+
 def train() -> None:
-    # train_tic_tac_toe
-    number_of_games = 100000
-    learning_rate = 0.2
-    exploration_rate = 0.3
-    train_hash_policy(
+    number_of_games = 10000
+
+    hash_policy_learning_rate = 0.2
+    hash_policy_exploration_rate = 0.3
+
+    mcts_number_of_simulations = 1000
+    mcts_exploration_rate = 1.4
+    mcts_temperature = 1
+
+    # train hash_policy
+    # hash_policy_learning_rate = 0.2
+    # hash_policy_exploration_rate = 0.3
+    # train_hash_policy(
+    #     rules=GenericGomokuRules.create_tic_tac_toe_rules(),
+    #     hash_policy_evaluator_config=HashPolicy.Config(learning_rate=hash_policy_learning_rate,
+    #                                                    exploration_rate=hash_policy_exploration_rate),
+    #     trainer_config=Trainer.Config(number_of_games),
+    #     path=f"./models/tic_tac_toe_hash_policy" +
+    #          f"_g{number_of_games}_lr{hash_policy_learning_rate}_er{hash_policy_exploration_rate}",
+    # )
+
+    # train tic_tac_toe MCTS with Hash Policy
+    train_mcts_with_hash_policy(
         rules=GenericGomokuRules.create_tic_tac_toe_rules(),
-        hash_policy_evaluator_config=HashPolicy.Config(learning_rate=learning_rate,
-                                                       exploration_rate=exploration_rate),
-        trainer_config=Trainer.Config(number_of_games=number_of_games),
-        path=f"./models/tic_tac_toe_hash_policy" +
-             f"_g{number_of_games}_lr{learning_rate}_er{exploration_rate}",
+        mcts_config=MonteCarloTreeSearch.Config(
+            number_of_simulations=mcts_number_of_simulations,
+            exploration_rate=mcts_exploration_rate,
+            temperature=mcts_temperature,
+            max_time_sec=None,
+        ),
+        hash_policy_config=HashPolicy.Config(hash_policy_learning_rate, exploration_rate=0),
+        trainer_config=Trainer.Config(number_of_games),
+        path=f"./models/tic_tac_toe_mcts_hash_policy" +
+             f"_g{number_of_games}" +
+             f"_s{mcts_number_of_simulations}_exp{mcts_exploration_rate}_temp{mcts_temperature}" +
+             f"_lr{hash_policy_learning_rate}"
     )
 
 
@@ -207,11 +153,113 @@ def pit(game_name: str,
             swap_players(model_factory)
 
 
+def create_game_selection_state() -> GameSelectionState:
+    def evaluator_model_factory(evaluator_factory: Callable[[Rules], Evaluator]) -> Callable[[Rules], EvaluatorModel]:
+        return lambda rules: EvaluatorModel.create_with_best_move_picker(evaluator_factory(rules))
+
+    def hash_policy_factory(path: str) -> Callable[[Rules], HashPolicy]:
+        return lambda rules: HashPolicy(
+            rules,
+            StateHashPolicy.load(path),
+            HashPolicy.Config.create_for_playing())
+
+    def pure_mcts_factory(config: PureMonteCarloTreeSearch.Config) -> Callable[[Rules], PureMonteCarloTreeSearch]:
+        return lambda rules: PureMonteCarloTreeSearch(rules, config)
+
+    def mcts_factory(
+            evaluator_factory: Callable[[Rules], Evaluator],
+            config: MonteCarloTreeSearch.Config
+    ) -> Callable[[Rules], MonteCarloTreeSearch]:
+        return lambda rules: MonteCarloTreeSearch(rules, evaluator_factory(rules), config)
+
+    return GameSelectionState([
+        GameConfigParams(
+            "Tic Tac Toe",
+            GameType.TIC_TAC_TOE,
+            GenericGomokuRules.create_tic_tac_toe_rules(),
+            [
+                PlayerConfigParams("Human", None),
+                PlayerConfigParams(
+                    "pure_mcts_s1000_er1.4_t1s",
+                    evaluator_model_factory(
+                        pure_mcts_factory(
+                            PureMonteCarloTreeSearch.Config(
+                                number_of_simulations=1000,
+                                exploration_rate=1.4,
+                                max_time_sec=1)))),
+                PlayerConfigParams(
+                    "pure_mcts_s3000_er1.4_t5s",
+                    evaluator_model_factory(
+                        pure_mcts_factory(
+                            PureMonteCarloTreeSearch.Config(
+                                number_of_simulations=3000,
+                                exploration_rate=1.4,
+                                max_time_sec=5)))),
+            ] + [
+                PlayerConfigParams(
+                    config,
+                    hash_policy_factory(f"./models/tic_tac_toe_{config}"))
+                for config in [
+                    "hash_policy_min_max",
+                    "hash_policy_g10000_lr0.2_er0.3",
+                    "hash_policy_g100000_lr0.2_er0.3",
+                    "mcts_hash_policy_g10000_s100_exp1.4_temp1_lr0.2",
+                    "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.2",
+                ]
+            ] + [
+                PlayerConfigParams(
+                    "mcts_s1000_exp1.4_temp0.1_t1s_" + config,
+                    mcts_factory(
+                        hash_policy_factory(f"./models/tic_tac_toe_{config}"),
+                        MonteCarloTreeSearch.Config(
+                            number_of_simulations=1000,
+                            exploration_rate=1.4,
+                            temperature=0.1,
+                            max_time_sec=1,
+                        )
+                    )
+                )
+                for config in [
+                    "hash_policy_g10000_lr0.2_er0.3",
+                    "hash_policy_g100000_lr0.2_er0.3",
+                    "mcts_hash_policy_g10000_s100_exp1.4_temp1_lr0.2",
+                    "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.2",
+                ]
+            ]
+        ),
+        GameConfigParams(
+            "Gomoku",
+            GameType.GOMOKU,
+            GenericGomokuRules.create_gomoku_rules(),
+            [
+                PlayerConfigParams("Human", None),
+            ]
+        ),
+        GameConfigParams(
+            "Connect 4",
+            GameType.CONNECT_FOUR,
+            ConnectFourRules.create_default_rules(),
+            [
+                PlayerConfigParams("Human", None),
+                PlayerConfigParams(
+                    "pure_mcts_s10000_er1.4_t20s",
+                    evaluator_model_factory(
+                        pure_mcts_factory(
+                            PureMonteCarloTreeSearch.Config(
+                                number_of_simulations=10000,
+                                exploration_rate=1.4,
+                                max_time_sec=20)))),
+            ]
+        )
+    ])
+
+
 if __name__ == "__main__":
-    # play()
+    play()
     # min_max_to_hash_policy()
     # train()
-    pit(game_name="Tic Tac Toe",
-        first_player_name="hash_policy_min_max",
-        second_player_name="mcts_s1000_exp1.4_temp0.1_t1s_" + "hash_policy_g10000_lr0.2_er0.3",
-        number_of_games=1000)
+    # pit(game_name="Tic Tac Toe",
+    #     first_player_name="hash_policy_min_max",
+    #     # second_player_name="mcts_s1000_exp1.4_temp0.1_t1s_" + "hash_policy_g10000_lr0.2_er0.3",
+    #     second_player_name="mcts_s1000_exp1.4_temp0.1_t1s_" + "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.2",
+    #     number_of_games=1000)
