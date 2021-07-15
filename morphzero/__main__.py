@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any, Callable
 
 from morphzero.ai.algorithms.hash_policy import HashPolicy, StateHashPolicy
@@ -102,7 +103,8 @@ def play() -> None:
 def pit(game_name: str,
         first_player_name: str,
         second_player_name: str,
-        number_of_games: int) -> None:
+        number_of_games: int,
+        until_first_non_draw: bool) -> None:
     game_selection_state = create_game_selection_state()
     game_config_params = next(
         game_config_params
@@ -127,6 +129,11 @@ def pit(game_name: str,
 
     rules = game_config_params.rules
     engine = rules.create_engine()
+    score_distribution = {
+        "draw": 0,
+        first_player_name: 0,
+        second_player_name: 0,
+    }
     for i in range(number_of_games):
         print_progress_bar(i + 1, number_of_games, suffix=f"{i + 1} out of {number_of_games}")
         models = {
@@ -142,15 +149,22 @@ def pit(game_name: str,
 
         assert state.result
         if state.result.winner != Player.NO_PLAYER:
-            for s in states:
-                assert isinstance(s, ConnectOnMatrixBoardState)
-                print()
-                print(board_to_string(s.board))
-            print(f"Winner is {names[state.result.winner]}")
-            break
+            score_distribution[names[state.result.winner]] += 1
+            if until_first_non_draw:
+                for s in states:
+                    assert isinstance(s, ConnectOnMatrixBoardState)
+                    print()
+                    print(board_to_string(s.board))
+                break
         else:
-            swap_players(names)
-            swap_players(model_factory)
+            score_distribution["draw"] += 1
+
+        swap_players(names)
+        swap_players(model_factory)
+
+    print("Score distribution: ")
+    for name, score in score_distribution.items():
+        print(f"\t{name}: {score}")
 
 
 def create_game_selection_state() -> GameSelectionState:
@@ -258,8 +272,11 @@ if __name__ == "__main__":
     play()
     # min_max_to_hash_policy()
     # train()
-    # pit(game_name="Tic Tac Toe",
-    #     first_player_name="hash_policy_min_max",
-    #     # second_player_name="mcts_s1000_exp1.4_temp0.1_t1s_" + "hash_policy_g10000_lr0.2_er0.3",
-    #     second_player_name="mcts_s1000_exp1.4_temp0.1_t1s_" + "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.2",
-    #     number_of_games=1000)
+    # pit("Tic Tac Toe",
+    #     "hash_policy_min_max",
+    #     # "hash_policy_g10000_lr0.2_er0.3",
+    #     # "mcts_s1000_exp1.4_temp0.1_t1s_" + "hash_policy_g10000_lr0.2_er0.3",
+    #     # "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.2",
+    #     "mcts_s1000_exp1.4_temp0.1_t1s_" + "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.2",
+    #     number_of_games=100,
+    #     until_first_non_draw=False)
