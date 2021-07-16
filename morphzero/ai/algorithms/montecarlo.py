@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import NamedTuple, Iterable, Optional, Callable
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
-from morphzero.ai.evaluator import Evaluator
+from morphzero.ai.evaluator import Evaluator, EvaluationResult
 from morphzero.ai.model import TrainingModel
 from morphzero.core.game import State, Result, Rules, Engine
 
@@ -61,7 +61,20 @@ class MonteCarloTreeSearch(TrainingModel):
 
     def train(self, result: Result, states: Iterable[State]) -> None:
         """Passes the training information to the evaluator."""
-        self.evaluator.train(result, states)
+
+        def get_desired_evaluation_result(state):
+            move_policy_dict = self.get_move_policy_dict(state)
+            move_policy = [0.] * self.rules.number_of_possible_moves()
+            for index, policy in move_policy_dict.items():
+                move_policy[index] = policy
+            return EvaluationResult(
+                win_rate=result_for_player(state.current_player, result),
+                move_policy=tuple(move_policy))
+
+        self.evaluator.train({
+            state: get_desired_evaluation_result(state)
+            for state in states
+        })
 
     def get_move_policy_dict(self, state: State) -> dict[int, float]:
         """Returns move policy as a dictionary for a given state."""

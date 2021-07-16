@@ -104,7 +104,7 @@ class PureMonteCarloTreeSearch(Evaluator):
         for (node, move_info) in node_moves:
             node.update(state.result, move_info)
 
-    def train(self, result: Result, states: Iterable[State]) -> None:
+    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
         raise TypeError("Training on played games not supported.")
 
     @classmethod

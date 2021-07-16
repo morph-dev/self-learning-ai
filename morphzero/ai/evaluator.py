@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import Iterable
 from typing import TypeVar, NamedTuple
 
-from morphzero.ai.algorithms.util import pick_one_index_with_highest_value
+from morphzero.ai.algorithms.util import pick_one_index_with_highest_value, result_for_player
 from morphzero.ai.model import TrainingModel
 from morphzero.core.game import State, Rules, MoveOrMoveIndex, Result
 
@@ -63,12 +63,11 @@ class Evaluator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def train(self, result: Result, states: Iterable[State]) -> None:
-        """Allows Evaluator to improve it's evaluation based on the result of the played game.
+    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+        """Allows Evaluator to improve it's evaluation.
 
         Args:
-            result: The result of the played game.
-            states: The states that happen in the game (in order).
+            learning_data: The desired State -> EvaluationResult based on the played game.
         """
         raise NotImplementedError()
 
@@ -91,7 +90,14 @@ class EvaluatorModel(TrainingModel, ABC):
         return self.move_picker.pick_move(evaluation_result)
 
     def train(self, result: Result, states: Iterable[State]) -> None:
-        return self.evaluator.train(result, states)
+        learning_data = {
+            state: EvaluationResult(
+                result_for_player(state.current_player, result),
+                tuple()
+            )
+            for state in states
+        }
+        return self.evaluator.train(learning_data)
 
     @classmethod
     def create_with_best_move_picker(cls, evaluator: Evaluator) -> EvaluatorModel:

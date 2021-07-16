@@ -34,7 +34,7 @@ class MinMaxEvaluator(Evaluator):
             self._get_move_policy(state, 0.01)
         )
 
-    def train(self, result: Result, states: Iterable[State]) -> None:
+    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
         raise TypeError("Training not supported.")
 
     def _score_state(self, state: State) -> float:

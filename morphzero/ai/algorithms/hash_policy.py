@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pickle
 import random
-from typing import Iterable, NamedTuple, Callable, Optional
+from typing import NamedTuple, Callable, Optional
 
 from morphzero.ai.algorithms.util import result_for_player, pick_one_index_with_highest_value
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
 from morphzero.ai.model import TrainingModel
-from morphzero.core.game import State, Rules, Engine, Result, MoveOrMoveIndex
+from morphzero.core.game import State, Rules, Engine, MoveOrMoveIndex
 
 
 class StateHashPolicy(dict[State, float]):
@@ -110,11 +110,11 @@ class HashPolicy(Evaluator, TrainingModel):
         else:
             raise ValueError(f"Unexpected next_state.current_player: {next_state.current_player}")
 
-    def train(self, result: Result, states: Iterable[State]) -> None:
-        for state in states:
+    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+        for state in learning_data:
             self.policy.update_policy(
                 state,
-                result_for_player(state.current_player, result),
+                learning_data[state].win_rate,
                 self.config.learning_rate)
 
     @classmethod
