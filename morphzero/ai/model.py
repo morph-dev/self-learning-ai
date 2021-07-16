@@ -22,5 +22,6 @@ class TrainingModel(Model, ABC):
     """Base class for playing the game and learning based on played games."""
 
     @abstractmethod
-    def train(self, result: Result, states: Iterable[State]) -> None:
+    def train_from_game(self, result: Result, states: Iterable[State]) -> None:
+        """Model is trained based on the played game and the result."""
         raise NotImplementedError()

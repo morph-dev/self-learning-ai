@@ -37,7 +37,7 @@ class Trainer:
                 states.append(state)
 
             assert state.result
-            self.model.train(state.result, states)
+            self.model.train_from_game(state.result, states)
 
     class Config(NamedTuple):
         """The configuration for Trainer.
