@@ -5,12 +5,13 @@ from dataclasses import dataclass
 import tensorflow as tf
 
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
-from morphzero.core.game import Rules, State
+from morphzero.core.game import Rules, State, Engine
 
 
 class KerasEvaluator(Evaluator):
     rules: Rules
     config: KerasEvaluator.Config
+    engine: Engine
     model: tf.keras.Model
 
     def __init__(self,
@@ -18,6 +19,8 @@ class KerasEvaluator(Evaluator):
                  config: KerasEvaluator.Config):
         self.rules = rules
         self.config = config
+
+        self.engine = rules.create_engine()
         self.model = self.create_model()
 
     def supports_rules(self, rules: Rules) -> bool:
@@ -28,6 +31,10 @@ class KerasEvaluator(Evaluator):
             tf.convert_to_tensor([state.to_training_data()]),
             training=self.config.training
         )
+        move_policy = move_policy_tensor[0].numpy()
+        for move_index, playable in enumerate(self.engine.playable_moves_bitmap(state)):
+            if not playable:
+                move_policy[move_index] = 0
         return EvaluationResult.normalize_and_create(
             win_rate_tensor[0][0].numpy(),
             tuple(move_policy_tensor[0].numpy()),

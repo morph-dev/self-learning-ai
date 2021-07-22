@@ -74,6 +74,7 @@ class MonteCarloTreeSearch(TrainingModel):
         self.evaluator.train({
             state: get_desired_evaluation_result(state)
             for state in states
+            if not state.is_game_over
         })
 
     def get_move_policy_dict(self, state: State) -> dict[int, float]:
