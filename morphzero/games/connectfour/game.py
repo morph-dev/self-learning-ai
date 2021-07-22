@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Union, Iterator
 
+import numpy as np
+
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardResult, ConnectOnMatrixBoardState, \
     ConnectOnMatrixBoardRules, ConnectOnMatrixBoardEngine, ConnectOnMatrixBoardMove
 from morphzero.core.common.matrix_board import MatrixBoardSize, MatrixBoardCoordinates, MatrixBoard
@@ -10,17 +12,17 @@ from morphzero.core.game import Player
 
 class ConnectFourResult(ConnectOnMatrixBoardResult):
     """Result for the Connect 4 game."""
-    pass
 
 
 class ConnectFourState(ConnectOnMatrixBoardState):
     """State for the Connect 4 game."""
-    pass
+
+    def to_training_data(self) -> np.array:
+        return np.array(self.board.data)
 
 
 class ConnectFourMove(ConnectOnMatrixBoardMove):
     """Move for the Connect 4 game."""
-    pass
 
 
 MoveOrMoveIndex = Union[ConnectFourMove, int]

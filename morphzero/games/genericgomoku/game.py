@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Union, Iterator
 
+import numpy as np
+
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardResult, ConnectOnMatrixBoardState, \
     ConnectOnMatrixBoardRules, ConnectOnMatrixBoardEngine, ConnectOnMatrixBoardMove
 from morphzero.core.common.matrix_board import MatrixBoardSize, MatrixBoard
@@ -14,6 +16,9 @@ class GenericGomokuResult(ConnectOnMatrixBoardResult):
 
 class GenericGomokuState(ConnectOnMatrixBoardState):
     """State for the Gomoku type games."""
+
+    def to_training_data(self) -> np.array:
+        return np.array(self.board.data)
 
 
 class GenericGomokuMove(ConnectOnMatrixBoardMove):

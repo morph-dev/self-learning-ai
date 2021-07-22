@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum, unique
 from typing import Optional, Union, Literal
 
+import numpy as np
+
 
 @unique
 class Player(IntEnum):
@@ -75,6 +77,9 @@ class State:
         """
         return self.result is not None
 
+    def to_training_data(self) -> np.array:
+        """Returns np.array that is used to create tf.Tensor for training."""
+        raise NotImplementedError()
 
 @dataclass(frozen=True)
 class Move:
