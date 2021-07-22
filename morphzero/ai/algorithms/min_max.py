@@ -52,7 +52,7 @@ class MinMaxEvaluator(Evaluator):
         self.score[state] = max(self._get_move_policy(state))
         return self.score[state]
 
-    def _get_move_policy(self, state: State, min_for_playable_moves: float = 0) -> tuple[float, ...]:
+    def _get_move_policy(self, state: State, min_for_playable_moves: float = 0.) -> tuple[float, ...]:
         """Returns move_policy for a given state.
 
         Move policy is a tuple of move_scores for each possible move. If move is not playable, it will have 0 value,
@@ -66,7 +66,7 @@ class MinMaxEvaluator(Evaluator):
                 move_score = self._score_move(state, move_index)
                 return max(move_score, min_for_playable_moves)
             else:
-                return 0
+                return 0.
 
         return tuple(
             score(move_index)
@@ -79,12 +79,12 @@ class MinMaxEvaluator(Evaluator):
         The value is in the range [0, 1] and it's from state.current_player's point of view.
         """
         if not self.engine.is_move_playable(state, move):
-            return 0
+            return 0.
         next_state = self.engine.play_move(state, move)
         next_state_score = self._score_state(next_state)
         if state.current_player == next_state.current_player:
             return next_state_score
         elif state.current_player.other_player == next_state.current_player:
-            return 1 - next_state_score
+            return 1. - next_state_score
         else:
             raise ValueError(f"Unexpected player: {next_state.current_player}")
