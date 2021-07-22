@@ -1,8 +1,6 @@
-from typing import Iterable
-
 from morphzero.ai.algorithms.util import result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
-from morphzero.core.game import Result, State, Rules, Engine, MoveOrMoveIndex
+from morphzero.core.game import State, Rules, Engine, MoveOrMoveIndex
 
 
 class MinMaxEvaluator(Evaluator):
