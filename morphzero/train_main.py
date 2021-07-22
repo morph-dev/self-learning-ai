@@ -36,7 +36,7 @@ def train_mcts_with_hash_policy(
     hash_policy.policy.store(path)
 
 
-def train_keras():
+def train_keras() -> None:
     rules = GenericGomokuRules.create_tic_tac_toe_rules()
     ttt = TicTacToeKeras(
         TicTacToeKeras.Config(
