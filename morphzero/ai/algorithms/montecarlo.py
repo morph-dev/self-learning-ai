@@ -67,7 +67,7 @@ class MonteCarloTreeSearch(TrainingModel):
             move_policy = [0.] * self.rules.number_of_possible_moves()
             for index, policy in move_policy_dict.items():
                 move_policy[index] = policy
-            return EvaluationResult(
+            return EvaluationResult.normalize_and_create(
                 win_rate=result_for_player(state.current_player, result),
                 move_policy=tuple(move_policy))
 

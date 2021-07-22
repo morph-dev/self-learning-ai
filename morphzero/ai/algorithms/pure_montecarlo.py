@@ -61,7 +61,9 @@ class PureMonteCarloTreeSearch(Evaluator):
         for move_index in move_policy_dict:
             move_policy[move_index] = move_policy_dict[move_index]
 
-        return EvaluationResult(node.best_move().win_ratio, tuple(move_policy))
+        return EvaluationResult.normalize_and_create(
+            node.best_move().win_ratio,
+            tuple(move_policy))
 
     def simulation(self, state: State) -> None:
         """Runs one MonteCarloTreeSearch simulation.

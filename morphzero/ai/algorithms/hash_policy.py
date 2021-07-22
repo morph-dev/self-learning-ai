@@ -89,7 +89,7 @@ class HashPolicy(Evaluator, TrainingModel):
             return move_index
 
     def evaluate(self, state: State) -> EvaluationResult:
-        return EvaluationResult(
+        return EvaluationResult.normalize_and_create(
             win_rate=self.policy[state],
             move_policy=tuple(
                 self.evaluate_move(state, move_index)
@@ -112,7 +112,7 @@ class HashPolicy(Evaluator, TrainingModel):
 
     def train_from_game(self, result: Result, states: Iterable[State]) -> None:
         self.train({
-            state: EvaluationResult(
+            state: EvaluationResult.normalize_and_create(
                 result_for_player(state.current_player, result),
                 tuple())
             for state in states

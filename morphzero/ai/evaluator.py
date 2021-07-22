@@ -23,29 +23,19 @@ class EvaluationResult(NamedTuple):
     win_rate: float
     move_policy: tuple[float, ...]
 
-    def normalized_move_policy(self, playable_moves: tuple[bool, ...]) -> tuple[float, ...]:
-        """Normalizes move_policy taking into consideration playable moves.
+    @classmethod
+    def normalize_and_create(cls, win_rate: float, move_policy: tuple[float, ...]) -> EvaluationResult:
+        """Normalizes move_policy and creates EvaluationResult.
 
-        Only playable moves will be non-zero and others will be scaled so that their sum is one.
-        That means that values can be interpreted as probabilities and can be used for picking next move to play.
+        It's expected that all values in move_policy are non-negative.
+        If at least one is positive (non-zero), all are scaled so that their sum is 1.
         """
-        if len(self.move_policy) == len(playable_moves):
-            raise ValueError(f"Unexpected length of playable_moves ({len(playable_moves)})")
-        if not any(playable_moves):
-            raise ValueError("At least one playable move is expected.")
-
-        playable_move_policy = tuple(
-            policy if playable and policy >= 0 else 0
-            for playable, policy in zip(playable_moves, self.move_policy)
-        )
-        policy_sum = sum(playable_move_policy)
-        if policy_sum == 0:
-            # all playable moves have equal probability
-            playable_move_policy = tuple(1 if playable else 0 for playable in playable_moves)
-            policy_sum = sum(playable_move_policy)
-        return tuple(
-            policy / policy_sum
-            for policy in playable_move_policy
+        if any(policy < 0 for policy in move_policy):
+            raise ValueError("All move policies should be non-negative.")
+        policy_sum = sum(move_policy)
+        return EvaluationResult(
+            win_rate=win_rate,
+            move_policy=tuple(policy / policy_sum for policy in move_policy),
         )
 
 
@@ -91,7 +81,7 @@ class EvaluatorModel(TrainingModel, ABC):
 
     def train_from_game(self, result: Result, states: Iterable[State]) -> None:
         learning_data = {
-            state: EvaluationResult(
+            state: EvaluationResult.normalize_and_create(
                 result_for_player(state.current_player, result),
                 tuple()
             )

@@ -29,7 +29,7 @@ class MinMaxEvaluator(Evaluator):
         return self.rules == rules
 
     def evaluate(self, state: State) -> EvaluationResult:
-        return EvaluationResult(
+        return EvaluationResult.normalize_and_create(
             self._score_state(state),
             self._get_move_policy(state, 0.01)
         )
