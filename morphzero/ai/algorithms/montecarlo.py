@@ -48,7 +48,8 @@ class MonteCarloTreeSearch(TrainingModel):
         for simulation_index in range(self.config.number_of_simulations):
             elapsed_time_sec = time.time() - start_time_sec
             if self.config.max_time_sec and elapsed_time_sec > self.config.max_time_sec:
-                print(f"Only {simulation_index} out of {self.config.number_of_simulations} simulations.")
+                if simulation_index < self.config.number_of_simulations / 2:
+                    print(f"Only {simulation_index} out of {self.config.number_of_simulations} simulations.")
                 break
             self.simulation(state)
 
