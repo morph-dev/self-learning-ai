@@ -33,14 +33,9 @@ def _execute_off_thread(
             time.sleep(min_duration - elapsed_time_sec)
         if use_busy_cursor:
             wx.CallAfter(wx.EndBusyCursor)
-        wx.CallAfter(main_thread_callback, t)
+        wx.CallAfter(callback, t)
 
     threading.Thread(target=off_thread).start()
-
-    def main_thread_callback(t: T) -> None:
-        if use_busy_cursor:
-            wx.EndBusyCursor()
-        callback(t)
 
 
 class BaseGamePanel(wx.Panel, GameServiceListener):
