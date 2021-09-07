@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import NamedTuple, Iterable, TypeVar, Generic, Mapping, Iterator
+from typing import NamedTuple, Iterable, TypeVar, Generic, Mapping, Iterator, Dict, Tuple
 
 from morphzero.core.game import Board
 
@@ -43,33 +43,33 @@ class MatrixBoardCoordinates(NamedTuple):
                                       column=-self.column)
 
 
-def _to_board_coordinates_list(directions: Iterable[tuple[int, int]]) -> tuple[MatrixBoardCoordinates, ...]:
+def _to_board_coordinates_list(directions: Iterable[Tuple[int, int]]) -> Tuple[MatrixBoardCoordinates, ...]:
     return tuple(MatrixBoardCoordinates(*t) for t in directions)
 
 
-RIGHT_AND_DOWN_DIRECTIONS: tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
+RIGHT_AND_DOWN_DIRECTIONS: Tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
     [(0, 1), (1, 0)])
 """Only → and ↓ directions."""
 
-CARDINAL_DIRECTIONS: tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
+CARDINAL_DIRECTIONS: Tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
     [(-1, 0), (0, 1), (1, 0), (0, -1)])
 """The 4 main directions (↑ → ↓ ←)."""
 
-INTERCARDINAL_DIRECTIONS: tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
+INTERCARDINAL_DIRECTIONS: Tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
     [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)])
 """The 8 main directions (↖ ↑ ↗ ← → ↙ ↓ ↘)."""
 
-HALF_INTERCARDINAL_DIRECTIONS: tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
+HALF_INTERCARDINAL_DIRECTIONS: Tuple[MatrixBoardCoordinates, ...] = _to_board_coordinates_list(
     [(0, 1), (1, 1), (1, 0), (1, -1)])
 """Only one direction from main 8 axis (→ ↘ ↓ ↙)."""
 
 
 @dataclass(frozen=True)
 class MatrixBoard(Board, Mapping[MatrixBoardCoordinates, T], Generic[T]):
-    data: tuple[tuple[T, ...], ...]
+    data: Tuple[Tuple[T, ...], ...]
 
     @property
-    def rows(self) -> tuple[tuple[T, ...], ...]:
+    def rows(self) -> Tuple[Tuple[T, ...], ...]:
         return self.data
 
     @property
@@ -103,7 +103,7 @@ class MatrixBoard(Board, Mapping[MatrixBoardCoordinates, T], Generic[T]):
         data = (row,) * board_size.rows
         return cls(data)
 
-    def replace(self, replacements: dict[MatrixBoardCoordinates, T]) -> MatrixBoard[T]:
+    def replace(self, replacements: Dict[MatrixBoardCoordinates, T]) -> MatrixBoard[T]:
         new_data = list(list(row) for row in self.data)
         for coordinates in replacements:
             new_data[coordinates.row][coordinates.column] = replacements[coordinates]

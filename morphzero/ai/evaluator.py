@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import random
 from abc import ABC, abstractmethod
-from collections import Iterable
-from typing import TypeVar, NamedTuple
+from typing import TypeVar, NamedTuple, Dict, Tuple, Iterable
 
 from morphzero.ai.algorithms.util import pick_one_index_with_highest_value, result_for_player
 from morphzero.ai.model import TrainingModel
@@ -21,10 +20,10 @@ class EvaluationResult(NamedTuple):
         move_policy: The tuple of scores associated with each move (using move_index).
     """
     win_rate: float
-    move_policy: tuple[float, ...]
+    move_policy: Tuple[float, ...]
 
     @classmethod
-    def normalize_and_create(cls, win_rate: float, move_policy: tuple[float, ...]) -> EvaluationResult:
+    def normalize_and_create(cls, win_rate: float, move_policy: Tuple[float, ...]) -> EvaluationResult:
         """Normalizes move_policy and creates EvaluationResult.
 
         It's expected that all values in move_policy are non-negative.
@@ -53,7 +52,7 @@ class Evaluator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
         """Allows Evaluator to improve it's evaluation.
 
         Args:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 import wx
 
@@ -29,7 +29,7 @@ class GenericGomokuPanel(BaseGamePanel, MatrixGameBoard.OnClickCallback):
                                grid_painter=GridPainter(self.game_graphics_context),
                                painters=painters)
 
-    def create_painters(self) -> dict[Player, Painter]:
+    def create_painters(self) -> Dict[Player, Painter]:
         if self.game_config.type == GameType.TIC_TAC_TOE:
             return {
                 player: painter(self.game_graphics_context, self.game_graphics_context.player_colors[player])

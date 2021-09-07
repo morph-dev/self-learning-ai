@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, unique
-from typing import Optional
+from typing import Optional, Dict
 
 from morphzero.ai.model import Model
 from morphzero.core.game import Player, Rules
@@ -24,7 +24,7 @@ class GameConfig:
     name: str
     type: GameType
     rules: Rules
-    players: dict[Player, PlayerConfig]
+    players: Dict[Player, PlayerConfig]
 
     def __post_init__(self) -> None:
         if self.type == GameType.TIC_TAC_TOE:

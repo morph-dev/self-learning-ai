@@ -1,7 +1,6 @@
 import math
 import random
-from collections import Iterable, Sequence, Callable, deque
-from typing import TypeVar
+from typing import TypeVar, Iterable, Sequence, Callable, Deque
 
 from morphzero.core.game import Result, Player
 
@@ -35,7 +34,7 @@ def pick_one_index_with_highest_value(items: Sequence[float]) -> int:
 def pick_one_with_highest_value(items: Iterable[T], key: Callable[[T], float]) -> T:
     """Returns one of the items (if multiple) for which key function returns the highest value."""
     max_key = -math.inf
-    max_items = deque[T]()
+    max_items = Deque[T]()
 
     for item in items:
         key_value = key(item)

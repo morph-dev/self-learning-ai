@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Tuple
 
 import tensorflow as tf
 from tensorflow import keras
 
-from morphzero.ai.algorithms.keras import KerasEvaluator
+from morphzero.ai.algorithms.keras import KerasEvaluator, KerasEvaluatorConfig
 from morphzero.games.genericgomoku.game import GenericGomokuRules
 
 
 class TicTacToeKeras(KerasEvaluator):
     rules: GenericGomokuRules
-    config: TicTacToeKeras.Config
+    config: TicTacToeKerasConfig
 
-    def __init__(self, config: TicTacToeKeras.Config):
+    def __init__(self, config: TicTacToeKerasConfig):
         rules = GenericGomokuRules.create_tic_tac_toe_rules()
         super().__init__(rules, config)
 
@@ -54,11 +55,12 @@ class TicTacToeKeras(KerasEvaluator):
             optimizer=keras.optimizers.Adam(self.config.learning_rate))
         return model
 
-    @dataclass(frozen=True)
-    class Config(KerasEvaluator.Config):
-        filters: int
-        mid_layer_size: int
-        kernel_size: tuple[int, int] = (3, 3)
+
+@dataclass(frozen=True)
+class TicTacToeKerasConfig(KerasEvaluatorConfig):
+    filters: int
+    mid_layer_size: int
+    kernel_size: Tuple[int, int] = (3, 3)
 
 
 # class dotdict(dict):

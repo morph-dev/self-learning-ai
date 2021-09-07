@@ -1,7 +1,6 @@
 import threading
 import time
-from collections import Callable
-from typing import Optional, Any, TypeVar
+from typing import Optional, Any, TypeVar, Callable
 
 import wx
 

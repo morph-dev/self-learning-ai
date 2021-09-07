@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 from morphzero.core.game import Move, State, Engine
 
 
@@ -10,7 +12,7 @@ class GameService:
     """
     engine: Engine
     state: State
-    listeners: list[GameServiceListener]
+    listeners: List[GameServiceListener]
 
     def __init__(self, engine: Engine) -> None:
         self.engine = engine

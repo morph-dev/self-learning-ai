@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections import deque
-from typing import NamedTuple
+from typing import NamedTuple, Deque
 
 from morphzero.ai.model import TrainingModel
 from morphzero.common import print_progress_bar
@@ -28,7 +27,7 @@ class Trainer:
         for game_index in range(self.config.number_of_games):
             print_progress_bar(game_index + 1, self.config.number_of_games, "Training")
 
-            states = deque[State]()
+            states = Deque[State]()
             state = engine.new_game()
             states.append(state)
             while not state.is_game_over:

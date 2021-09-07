@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections import Iterable
+from typing import Iterable
 
 from morphzero.core.game import State, Result, MoveOrMoveIndex, Rules
 

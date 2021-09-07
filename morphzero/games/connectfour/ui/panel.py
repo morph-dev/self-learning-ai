@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 import wx
 
@@ -30,7 +30,7 @@ class ConnectFourPanel(BaseGamePanel, MatrixGameBoard.OnClickCallback):
                                           grid_painter=matrixgame.GridPainter(self.game_graphics_context),
                                           painters=painters)
 
-    def create_painters(self) -> dict[Player, Painter]:
+    def create_painters(self) -> Dict[Player, Painter]:
         return {
             player: CirclePainter(
                 self.game_graphics_context,

@@ -3,9 +3,8 @@ from __future__ import annotations
 import math
 import random
 import time
-from collections import deque, Iterable
 from dataclasses import dataclass, field
-from typing import NamedTuple, Optional, Callable
+from typing import NamedTuple, Optional, Callable, Dict, Deque, Tuple
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
@@ -31,8 +30,8 @@ class PureMonteCarloTreeSearch(Evaluator):
     config: PureMonteCarloTreeSearch.Config
 
     engine: Engine
-    nodes: dict[State, _Node]
-    discovered_states: dict[State, State]
+    nodes: Dict[State, _Node]
+    discovered_states: Dict[State, State]
 
     def __init__(self, rules: Rules, config: PureMonteCarloTreeSearch.Config):
         self.rules = rules
@@ -77,7 +76,7 @@ class PureMonteCarloTreeSearch(Evaluator):
 
             Backpropagation: Update nodes within selection with the outcome of the rollout stage.
         """
-        node_moves = deque[tuple[_Node, _MoveInfo]]()
+        node_moves = Deque[Tuple[_Node, _MoveInfo]]()
         # Selection & Expansion
         expanded = False
         while not state.is_game_over and not expanded:
@@ -106,7 +105,7 @@ class PureMonteCarloTreeSearch(Evaluator):
         for (node, move_info) in node_moves:
             node.update(state.result, move_info)
 
-    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
         raise TypeError("Training on played games not supported.")
 
     @classmethod
@@ -130,7 +129,7 @@ class _Node:
     """
     state: State
     total_exploration_count: int
-    moves: tuple[_MoveInfo, ...]
+    moves: Tuple[_MoveInfo, ...]
 
     def __init__(self, state: State):
         assert not state.is_game_over
@@ -138,7 +137,7 @@ class _Node:
         self.total_exploration_count = 0
         self.moves = ()
 
-    def expand(self, engine: Engine, discovered_states: dict[State, State]) -> None:
+    def expand(self, engine: Engine, discovered_states: Dict[State, State]) -> None:
         """Called in order to expand node to it's children in the game tree."""
 
         def create_move_info(move: Move) -> _MoveInfo:
@@ -158,7 +157,7 @@ class _Node:
         """Returns one of the moves with the highest win_rate."""
         return self.play_move(exploration_rate=0)
 
-    def move_policy_dict(self) -> dict[int, float]:
+    def move_policy_dict(self) -> Dict[int, float]:
         """Returns move_index -> win_rate dictionary."""
         return {
             move_info.move_index: move_info.win_ratio

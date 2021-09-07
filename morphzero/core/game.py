@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod, ABC
-from collections import Iterator
 from dataclasses import dataclass, field
 from enum import IntEnum, unique
-from typing import Optional, Union, Literal
+from typing import Optional, Union, Tuple, Iterator
+from typing_extensions import Literal
 
 import numpy as np
 
@@ -80,6 +80,7 @@ class State:
     def to_training_data(self) -> np.array:
         """Returns np.array that is used to create tf.Tensor for training."""
         raise NotImplementedError()
+
 
 @dataclass(frozen=True)
 class Move:
@@ -160,7 +161,7 @@ class Engine(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def playable_moves_bitmap(self, state: State) -> tuple[bool, ...]:
+    def playable_moves_bitmap(self, state: State) -> Tuple[bool, ...]:
         """Indicates which moves are playable from the given state.
 
         If state represents the "Game Over" state, all values will be False.

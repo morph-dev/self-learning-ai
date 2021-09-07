@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 from morphzero.ai.algorithms.hash_policy import HashPolicy
 from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch
@@ -11,7 +11,7 @@ from morphzero.ui.gameselection import PlayerConfigParams
 
 def battle(
         rules: Rules,
-        players: dict[Player, PlayerConfigParams],
+        players: Dict[Player, PlayerConfigParams],
         number_of_games: int,
         until_first_non_draw: bool) -> None:
     names = {
@@ -23,7 +23,7 @@ def battle(
         for player in players
     }
 
-    def swap_players(d: dict[Player, Any]) -> None:
+    def swap_players(d: Dict[Player, Any]) -> None:
         d[Player.FIRST_PLAYER], d[Player.SECOND_PLAYER] = d[Player.SECOND_PLAYER], d[Player.FIRST_PLAYER]
 
     engine = rules.create_engine()

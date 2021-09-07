@@ -1,4 +1,4 @@
-from collections import Iterable
+from typing import Iterable
 
 from morphzero.core.common.matrix_board import MatrixBoard
 from morphzero.core.game import Player

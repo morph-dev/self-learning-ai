@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pickle
 import random
-from typing import NamedTuple, Callable, Optional, Iterable
+from typing import NamedTuple, Callable, Optional, Iterable, Dict
 
 from morphzero.ai.algorithms.util import result_for_player, pick_one_index_with_highest_value
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
@@ -10,7 +10,7 @@ from morphzero.ai.model import TrainingModel
 from morphzero.core.game import State, Rules, Engine, MoveOrMoveIndex, Result
 
 
-class StateHashPolicy(dict[State, float]):
+class StateHashPolicy(Dict[State, float]):
     """Stores policy for each observed state, from state.current_player's point of view.
 
     Unobserved states have policy of 0.5.
@@ -118,7 +118,7 @@ class HashPolicy(Evaluator, TrainingModel):
             for state in states
         })
 
-    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
         for state in learning_data:
             self.policy.update_policy(
                 state,

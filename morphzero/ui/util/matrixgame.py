@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Dict, Tuple
+
 import wx
 
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardState, ConnectOnMatrixBoardRules
@@ -15,7 +17,7 @@ def recommended_game_board_size(board_size: MatrixBoardSize) -> wx.Size:
     return wx.Size(board_size[1] * cell_size, board_size[0] * cell_size)
 
 
-def get_cell_size(board_size: MatrixBoardSize, window_size: wx.Size) -> tuple[float, float]:
+def get_cell_size(board_size: MatrixBoardSize, window_size: wx.Size) -> Tuple[float, float]:
     rows, columns = board_size
     width, height = window_size
     return width / columns, height / rows
@@ -26,7 +28,7 @@ class MatrixGameBoard(wx.Panel):
     game_service: GameService
     on_click_callback: OnClickCallback
     grid_painter: Painter
-    painters: dict[Player, Painter]
+    painters: Dict[Player, Painter]
     mouse_event_manager: MatrixGameBoard.MouseEventsManager
 
     def __init__(self,
@@ -34,7 +36,7 @@ class MatrixGameBoard(wx.Panel):
                  game_service: GameService,
                  on_click_callback: OnClickCallback,
                  grid_painter: Painter,
-                 painters: dict[Player, Painter]):
+                 painters: Dict[Player, Painter]):
         super().__init__(parent)
         self.game_service = game_service
         self.on_click_callback = on_click_callback

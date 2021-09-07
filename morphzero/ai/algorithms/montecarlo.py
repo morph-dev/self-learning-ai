@@ -3,9 +3,8 @@ from __future__ import annotations
 import math
 import random
 import time
-from collections import deque
 from dataclasses import dataclass
-from typing import NamedTuple, Iterable, Optional, Callable
+from typing import NamedTuple, Iterable, Optional, Callable, Dict, Deque, Tuple
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
@@ -53,8 +52,8 @@ class MonteCarloTreeSearch(TrainingModel):
                 break
             self.simulation(state)
 
-        move_indexes = deque[int]()
-        move_policies = deque[float]()
+        move_indexes = Deque[int]()
+        move_policies = Deque[float]()
         for move_index, move_policy in self.get_move_policy_dict(state).items():
             move_indexes.append(move_index)
             move_policies.append(move_policy)
@@ -78,7 +77,7 @@ class MonteCarloTreeSearch(TrainingModel):
             if not state.is_game_over
         })
 
-    def get_move_policy_dict(self, state: State) -> dict[int, float]:
+    def get_move_policy_dict(self, state: State) -> Dict[int, float]:
         """Returns move policy as a dictionary for a given state."""
         return self.nodes[state].get_move_policy_dict()
 
@@ -97,7 +96,7 @@ class MonteCarloTreeSearch(TrainingModel):
         """
         # Selection
         node = self.nodes[root_state]
-        node_moves = deque[tuple[_Node, _MoveInfo]]()
+        node_moves = Deque[Tuple[_Node, _MoveInfo]]()
         while not node.state.is_game_over and node.expanded:
             move_info = node.play_move()
             node_moves.append((node, move_info))
@@ -172,7 +171,7 @@ class _Node:
         """
         total_exploration_count: int
         result_prediction: float
-        moves: tuple[_MoveInfo, ...]
+        moves: Tuple[_MoveInfo, ...]
 
     def __init__(self, state: State, mcts: MonteCarloTreeSearch):
         self.state = state
@@ -210,7 +209,7 @@ class _Node:
             moves=moves
         )
 
-    def get_move_policy_dict(self) -> dict[int, float]:
+    def get_move_policy_dict(self) -> Dict[int, float]:
         """Returns move policy as a move_index -> policy for playable moves.
 
         Policy is calculated based on move exploration count and temperature (see MonteCarloTreeSearch.Config).
@@ -283,7 +282,7 @@ class _Node:
             return self.expanded_info.result_prediction
 
 
-class _StateToNodeDefaultDict(dict[State, _Node]):
+class _StateToNodeDefaultDict(Dict[State, _Node]):
     """Wrapper around dict[State, _Node] that initializes Node for missing states."""
     mcts: MonteCarloTreeSearch
 

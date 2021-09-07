@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Dict
 
 import wx
 
@@ -6,7 +7,7 @@ from morphzero.core.game import Player, Result
 from morphzero.ui.gameconfig import PlayerConfig, GameConfig
 
 
-def get_result_message(result: Result, player_configs: dict[Player, PlayerConfig]) -> str:
+def get_result_message(result: Result, player_configs: Dict[Player, PlayerConfig]) -> str:
     if result.is_draw:
         return "It is a draw!"
     else:
@@ -17,4 +18,4 @@ def get_result_message(result: Result, player_configs: dict[Player, PlayerConfig
 class GameGraphicsContext:
     game_config: GameConfig
     graphics_renderer: wx.GraphicsRenderer
-    player_colors: dict[Player, wx.Colour]
+    player_colors: Dict[Player, wx.Colour]

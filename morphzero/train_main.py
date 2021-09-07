@@ -4,7 +4,7 @@ from morphzero.ai.evaluator import EvaluationResult
 from morphzero.ai.trainer import Trainer
 from morphzero.common import board_to_string
 from morphzero.core.game import Rules
-from morphzero.games.genericgomoku.ai.tic_tac_toe import TicTacToeKeras
+from morphzero.games.genericgomoku.ai.tic_tac_toe import TicTacToeKeras, TicTacToeKerasConfig
 from morphzero.games.genericgomoku.game import GenericGomokuRules
 
 
@@ -39,7 +39,7 @@ def train_mcts_with_hash_policy(
 def train_keras() -> None:
     rules = GenericGomokuRules.create_tic_tac_toe_rules()
     ttt = TicTacToeKeras(
-        TicTacToeKeras.Config(
+        TicTacToeKerasConfig(
             training=True,
             verbose=0,
             learning_rate=0.1,

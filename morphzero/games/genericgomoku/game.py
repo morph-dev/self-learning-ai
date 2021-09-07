@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Iterator
+from typing import Union, Iterator, Tuple
 
 import numpy as np
 
@@ -72,7 +72,7 @@ class GenericGomokuEngine(ConnectOnMatrixBoardEngine):
             resign=True,
             coordinates=None)
 
-    def playable_moves_bitmap(self, state: GenericGomokuState) -> tuple[bool, ...]:  # type: ignore[override]
+    def playable_moves_bitmap(self, state: GenericGomokuState) -> Tuple[bool, ...]:  # type: ignore[override]
         result = [False] * self.number_of_possible_moves(self.rules.board_size)
         for move in self.playable_moves(state):
             result[move.move_index] = True

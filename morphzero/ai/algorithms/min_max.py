@@ -1,3 +1,5 @@
+from typing import Dict, Tuple
+
 from morphzero.ai.algorithms.util import result_for_player
 from morphzero.ai.evaluator import Evaluator, EvaluationResult
 from morphzero.core.game import State, Rules, Engine, MoveOrMoveIndex
@@ -16,7 +18,7 @@ class MinMaxEvaluator(Evaluator):
     """
     rules: Rules
     engine: Engine
-    score: dict[State, float]
+    score: Dict[State, float]
 
     def __init__(self, rules: Rules):
         self.rules = rules
@@ -32,7 +34,7 @@ class MinMaxEvaluator(Evaluator):
             self._get_move_policy(state, 0.01)
         )
 
-    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
         raise TypeError("Training not supported.")
 
     def _score_state(self, state: State) -> float:
@@ -50,7 +52,7 @@ class MinMaxEvaluator(Evaluator):
         self.score[state] = max(self._get_move_policy(state))
         return self.score[state]
 
-    def _get_move_policy(self, state: State, min_for_playable_moves: float = 0.) -> tuple[float, ...]:
+    def _get_move_policy(self, state: State, min_for_playable_moves: float = 0.) -> Tuple[float, ...]:
         """Returns move_policy for a given state.
 
         Move policy is a tuple of move_scores for each possible move. If move is not playable, it will have 0 value,

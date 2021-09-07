@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Optional, DefaultDict, Union, Iterator
+from typing import Optional, DefaultDict, Union, Iterator, Tuple
 
 import numpy as np
 
@@ -18,7 +18,7 @@ class ConnectOnMatrixBoardResult(Result):
     Attributes:
         winning_coordinates: The coordinates of the pieces that are making required connection.
     """
-    winning_coordinates: Optional[tuple[MatrixBoardCoordinates, ...]] = None
+    winning_coordinates: Optional[Tuple[MatrixBoardCoordinates, ...]] = None
 
     @classmethod
     def create_resignation(cls, winner: Player) -> ConnectOnMatrixBoardResult:
@@ -106,7 +106,7 @@ class ConnectOnMatrixBoardResult(Result):
         directions = matrix_board.HALF_INTERCARDINAL_DIRECTIONS
         for direction in directions:
 
-            def move_while_it_matches(d: MatrixBoardCoordinates) -> tuple[MatrixBoardCoordinates, int]:
+            def move_while_it_matches(d: MatrixBoardCoordinates) -> Tuple[MatrixBoardCoordinates, int]:
                 """Returns last coordinates that matched and how many times in moved."""
                 result = last_move_coordinates
                 move_count = 0
@@ -143,6 +143,9 @@ class ConnectOnMatrixBoardState(State):
     """The base class for game states for games that are played on a matrix board with a goal of connecting pieces."""
     result: Optional[ConnectOnMatrixBoardResult]
     board: MatrixBoard[Player]
+
+    def to_training_data(self) -> np.array:
+        raise NotImplementedError()
 
 
 @dataclass(frozen=True)
@@ -247,7 +250,7 @@ class ConnectOnMatrixBoardEngine(Engine, ABC):
     def create_move_from_move_index(self, move_index: int) -> ConnectOnMatrixBoardMove:
         raise NotImplementedError()
 
-    def playable_moves_bitmap(self, state: ConnectOnMatrixBoardState) -> tuple[bool, ...]:  # type: ignore[override]
+    def playable_moves_bitmap(self, state: ConnectOnMatrixBoardState) -> Tuple[bool, ...]:  # type: ignore[override]
         raise NotImplementedError()
 
     def playable_moves(  # type: ignore[override]

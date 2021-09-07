@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import wx
 
@@ -15,7 +15,7 @@ class Painter:
         paths: Paths to be painted.
     """
 
-    paths: tuple[wx.GraphicsPath, ...]
+    paths: Tuple[wx.GraphicsPath, ...]
 
     def __init__(self, *paths: wx.GraphicsPath):
         self.paths = paths

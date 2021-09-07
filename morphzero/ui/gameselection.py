@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Callable, Any, Optional, TypeVar
+from typing import NamedTuple, Callable, Any, Optional, TypeVar, Dict, List
 
 import wx
 
@@ -14,7 +14,7 @@ class GameConfigParams(NamedTuple):
     name: str
     type: GameType
     rules: Rules
-    player_config_params_list: list[PlayerConfigParams]
+    player_config_params_list: List[PlayerConfigParams]
 
 
 class PlayerConfigParams(NamedTuple):
@@ -48,9 +48,9 @@ class GameSelectionDialog(wx.Dialog):
 
 class GameSelectionState(NamedTuple):
     """The State of the GameSelectionDialog and GameSelectionPanel."""
-    game_config_params_list: list[GameConfigParams]
+    game_config_params_list: List[GameConfigParams]
     selected_game_config_params: Optional[GameConfigParams] = None
-    player_box_states: dict[Player, PlayerBoxState] = dict()
+    player_box_states: Dict[Player, PlayerBoxState] = dict()
 
     def create_game_config(self) -> GameConfig:
         game_config_params = self.selected_game_config_params
@@ -75,7 +75,7 @@ class GameSelectionPanel(wx.Panel):
     """The Ui component for selecting and configuring Game."""
     state: GameSelectionState
     rules_choice: wx.Choice
-    player_boxes: dict[Player, PlayerBox]
+    player_boxes: Dict[Player, PlayerBox]
 
     def __init__(self, state: GameSelectionState, **kwargs: Any):
         super().__init__(**kwargs)
@@ -221,7 +221,7 @@ T = TypeVar("T")
 
 
 def _populate_choice_with_params(choice: wx.Choice,
-                                 params_list: list[T],
+                                 params_list: List[T],
                                  name_function: Callable[[T], str],
                                  selected_params: Optional[T] = None) -> None:
     for params in params_list:

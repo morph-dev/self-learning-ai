@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Dict
 
 import tensorflow as tf
 
@@ -10,13 +11,13 @@ from morphzero.core.game import Rules, State, Engine
 
 class KerasEvaluator(Evaluator):
     rules: Rules
-    config: KerasEvaluator.Config
+    config: KerasEvaluatorConfig
     engine: Engine
     model: tf.keras.Model
 
     def __init__(self,
                  rules: Rules,
-                 config: KerasEvaluator.Config):
+                 config: KerasEvaluatorConfig):
         self.rules = rules
         self.config = config
 
@@ -40,7 +41,7 @@ class KerasEvaluator(Evaluator):
             tuple(move_policy_tensor[0].numpy()),
         )
 
-    def train(self, learning_data: dict[State, EvaluationResult]) -> None:
+    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
         states, evaluation_results = zip(*list(learning_data.items()))
         win_rates, move_policies = zip(*evaluation_results)
         inputs = tf.convert_to_tensor([state.to_training_data() for state in states])
@@ -66,9 +67,10 @@ class KerasEvaluator(Evaluator):
         """Creates a model that has State.to_training_data as input and win_rate and move_policy as output."""
         raise NotImplementedError()
 
-    @dataclass(frozen=True)
-    class Config:
-        training: bool
-        verbose: int
-        learning_rate: float
-        epochs: int
+
+@dataclass(frozen=True)
+class KerasEvaluatorConfig:
+    training: bool
+    verbose: int
+    learning_rate: float
+    epochs: int
