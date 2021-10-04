@@ -18,7 +18,10 @@ class GenericGomokuState(ConnectOnMatrixBoardState):
     """State for the Gomoku type games."""
 
     def to_training_data(self) -> np.array:
-        return np.array(self.board.data)
+        array = np.array(self.board.data)
+        if self.current_player == Player.SECOND_PLAYER:
+            array = -array
+        return array
 
 
 class GenericGomokuMove(ConnectOnMatrixBoardMove):

@@ -1,10 +1,10 @@
 from typing import Iterable
 
 from morphzero.core.common.matrix_board import MatrixBoard
-from morphzero.core.game import Player
+from morphzero.core.game import Player, Board
 
 
-def board_to_string(board: MatrixBoard,
+def board_to_string(board: Board,
                     no_player_symbol: str = " ",
                     first_player_symbol: str = "X",
                     second_player_symbol: str = "O",
@@ -13,6 +13,8 @@ def board_to_string(board: MatrixBoard,
     Prints human readable board with '|' and '-' as separators between cells and fills the rest
     using appropriate symbols.
     """
+    assert isinstance(board, MatrixBoard)
+
     player_map = {
         Player.NO_PLAYER: no_player_symbol,
         Player.FIRST_PLAYER: first_player_symbol,

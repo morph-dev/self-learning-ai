@@ -4,7 +4,7 @@ from typing import NamedTuple, Callable, Any, Optional, TypeVar, Dict, List
 
 import wx
 
-from morphzero.ai.model import Model
+from morphzero.ai.base import Model
 from morphzero.core.game import Player, Rules
 from morphzero.ui.gameconfig import GameConfig, PlayerConfig, GameType
 

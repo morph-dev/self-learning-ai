@@ -4,9 +4,8 @@ import pickle
 import random
 from typing import NamedTuple, Callable, Optional, Iterable, Dict
 
-from morphzero.ai.algorithms.util import result_for_player, pick_one_index_with_highest_value
-from morphzero.ai.evaluator import Evaluator, EvaluationResult
-from morphzero.ai.model import TrainingModel
+from morphzero.ai.algorithms.util import result_for_player
+from morphzero.ai.base import TrainableEvaluator, TrainableModel, EvaluationResult, TrainingSummary, TrainingData
 from morphzero.core.game import State, Rules, Engine, MoveOrMoveIndex, Result
 
 
@@ -54,17 +53,28 @@ class StateHashPolicy(Dict[State, float]):
             return hash_policy
 
 
-class HashPolicy(Evaluator, TrainingModel):
+class HashPolicyConfig(NamedTuple):
+    learning_rate: float
+    exploration_rate: float
+    valid_move_min_value: float = 0.000001
+    temperature: float = 1
+
+    @classmethod
+    def create_for_playing(cls) -> HashPolicyConfig:
+        return cls(learning_rate=0, exploration_rate=0, temperature=0.25)
+
+
+class HashPolicy(TrainableEvaluator, TrainableModel):
     """Evaluator and Model that learns how to play a game by storing expected policy value for each move."""
     rules: Rules
     engine: Engine
     policy: StateHashPolicy
-    config: HashPolicy.Config
+    config: HashPolicyConfig
 
     def __init__(self,
                  rules: Rules,
                  policy: StateHashPolicy,
-                 config: HashPolicy.Config):
+                 config: HashPolicyConfig):
         self.rules = rules
         self.engine = rules.create_engine()
         self.policy = policy
@@ -72,6 +82,16 @@ class HashPolicy(Evaluator, TrainingModel):
 
     def supports_rules(self, rules: Rules) -> bool:
         return rules == self.rules
+
+    def evaluate(self, state: State) -> EvaluationResult:
+        return EvaluationResult.create(
+            win_rate=self.policy[state],
+            move_policy=tuple(
+                self.evaluate_move(state, move_index)
+                for move_index in range(self.rules.number_of_possible_moves())
+            ),
+            temperature=self.config.temperature,
+        )
 
     def play_move(self, state: State) -> MoveOrMoveIndex:
         if state.is_game_over:
@@ -84,58 +104,49 @@ class HashPolicy(Evaluator, TrainingModel):
             )
             return random.choice(playable_moves)
         else:
-            move_policy = self.evaluate(state).move_policy
-            move_index = pick_one_index_with_highest_value(move_policy)
-            return move_index
-
-    def evaluate(self, state: State) -> EvaluationResult:
-        return EvaluationResult.normalize_and_create(
-            win_rate=self.policy[state],
-            move_policy=tuple(
-                self.evaluate_move(state, move_index)
-                for move_index in range(self.rules.number_of_possible_moves())
-            )
-        )
+            return self.evaluate(state).pick_move()
 
     def evaluate_move(self, state: State, move_index: int) -> float:
         """Evaluates the move for the given state."""
+        if move_index == self.engine.get_move_index_for_resign():
+            return 0
         if not self.engine.is_move_playable(state, move_index):
             return 0
         next_state = self.engine.play_move(state, move_index)
         next_state_policy = self.policy[next_state]
         if next_state.current_player == state.current_player:
-            return next_state_policy
+            return max(next_state_policy, self.config.valid_move_min_value)
         elif next_state.current_player == state.current_player.other_player:
-            return 1 - next_state_policy
+            return max(1 - next_state_policy, self.config.valid_move_min_value)
         else:
             raise ValueError(f"Unexpected next_state.current_player: {next_state.current_player}")
 
-    def train_from_game(self, result: Result, states: Iterable[State]) -> None:
-        self.train({
-            state: EvaluationResult.normalize_and_create(
-                result_for_player(state.current_player, result),
-                tuple())
-            for state in states
-        })
+    def create_training_data_for_game(
+            self, result: Result, states: Iterable[State]) -> TrainingData:
+        return TrainingData(
+            tuple(
+                (
+                    state,
+                    EvaluationResult.create(
+                        win_rate=result_for_player(state.current_player, result),
+                        move_policy=self.engine.playable_moves_bitmap(state),
+                    )
+                )
+                for state in states
+            )
+        )
 
-    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
-        for state in learning_data:
+    def train(self, training_data: TrainingData) -> TrainingSummary:
+        for state, desired_evaluation_result in training_data.data:
             self.policy.update_policy(
                 state,
-                learning_data[state].win_rate,
+                desired_evaluation_result.win_rate,
                 self.config.learning_rate)
+        return TrainingSummary()
 
     @classmethod
-    def factory(cls, path: str, config: Optional[HashPolicy.Config] = None) -> Callable[[Rules], HashPolicy]:
+    def factory(cls, path: str, config: Optional[HashPolicyConfig] = None) -> Callable[[Rules], HashPolicy]:
         return lambda rules: cls(
             rules,
             StateHashPolicy.load(path),
-            config if config else HashPolicy.Config.create_for_playing())
-
-    class Config(NamedTuple):
-        learning_rate: float
-        exploration_rate: float
-
-        @classmethod
-        def create_for_playing(cls) -> HashPolicy.Config:
-            return cls(learning_rate=0, exploration_rate=0)
+            config if config else HashPolicyConfig.create_for_playing())

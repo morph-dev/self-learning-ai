@@ -1,47 +1,62 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Deque
+from typing import NamedTuple, Deque, Optional
 
-from morphzero.ai.model import TrainingModel
+from morphzero.ai.base import TrainableModel, TrainingData
 from morphzero.common import print_progress_bar
 from morphzero.core.game import Rules, State
 
 
 class Trainer:
-    """Trainer trains the TrainingModel by making it play games against itself."""
+    """Trainer that trains the TrainingModel by making it play games against itself."""
     rules: Rules
-    model: TrainingModel
-    config: Trainer.Config
+    model: TrainableModel
+    config: TrainerConfig
 
     def __init__(self,
                  rules: Rules,
-                 model: TrainingModel,
-                 config: Trainer.Config):
+                 model: TrainableModel,
+                 config: TrainerConfig):
         self.rules = rules
         self.model = model
         self.config = config
 
     def train(self) -> None:
         engine = self.rules.create_engine()
+        for batch_index in range(self.config.iterations):
+            print(f"Iteration: {batch_index + 1:4d} out of {self.config.iterations}")
+            training_data: Optional[TrainingData] = None
+            for game_index in range(self.config.simulations):
+                print_progress_bar(game_index + 1, self.config.simulations, "Training")
 
-        for game_index in range(self.config.number_of_games):
-            print_progress_bar(game_index + 1, self.config.number_of_games, "Training")
+                states = Deque[State]()
 
-            states = Deque[State]()
-            state = engine.new_game()
-            states.append(state)
-            while not state.is_game_over:
-                move = self.model.play_move(state)
-                state = engine.play_move(state, move)
+                # play a game
+                state = engine.new_game()
                 states.append(state)
+                while not state.is_game_over:
+                    move = self.model.play_move(state)
+                    state = engine.play_move(state, move)
+                    states.append(state)
+                assert state.result
 
-            assert state.result
-            self.model.train_from_game(state.result, states)
+                # update training data
+                simulation_training_data = self.model.create_training_data_for_game(state.result, states)
+                if training_data:
+                    training_data.add(simulation_training_data)
+                else:
+                    training_data = simulation_training_data
 
-    class Config(NamedTuple):
-        """The configuration for Trainer.
+            if training_data:
+                self.model.train(training_data)
 
-        Attributes:
-            number_of_games: The number of games to run.
-        """
-        number_of_games: int
+
+class TrainerConfig(NamedTuple):
+    """The configuration for Trainer.
+
+    Attributes:
+        iterations: The number of iterations. Model is retrained at the end of each iteration.
+        simulations: The number of simulated games played in a iteration.
+    """
+    iterations: int
+    simulations: int

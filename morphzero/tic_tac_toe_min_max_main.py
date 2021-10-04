@@ -3,7 +3,7 @@ from morphzero.ai.algorithms.min_max import MinMaxEvaluator
 from morphzero.games.genericgomoku.game import GenericGomokuRules
 
 
-def min_max_to_hash_policy(path: str = "./models/tic_tac_toe_hash_policy_min_max") -> None:
+def min_max_to_hash_policy(path: str) -> None:
     rules = GenericGomokuRules.create_tic_tac_toe_rules()
     min_max_evaluator = MinMaxEvaluator(rules)
     min_max_evaluator.evaluate(rules.create_engine().new_game())

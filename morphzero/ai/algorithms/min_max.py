@@ -1,7 +1,7 @@
 from typing import Dict, Tuple
 
 from morphzero.ai.algorithms.util import result_for_player
-from morphzero.ai.evaluator import Evaluator, EvaluationResult
+from morphzero.ai.base import Evaluator, EvaluationResult
 from morphzero.core.game import State, Rules, Engine, MoveOrMoveIndex
 
 
@@ -29,9 +29,9 @@ class MinMaxEvaluator(Evaluator):
         return self.rules == rules
 
     def evaluate(self, state: State) -> EvaluationResult:
-        return EvaluationResult.normalize_and_create(
+        return EvaluationResult(
             self._score_state(state),
-            self._get_move_policy(state, 0.01)
+            self._get_move_policy(state)
         )
 
     def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
@@ -52,19 +52,17 @@ class MinMaxEvaluator(Evaluator):
         self.score[state] = max(self._get_move_policy(state))
         return self.score[state]
 
-    def _get_move_policy(self, state: State, min_for_playable_moves: float = 0.) -> Tuple[float, ...]:
+    def _get_move_policy(self, state: State) -> Tuple[float, ...]:
         """Returns move_policy for a given state.
 
-        Move policy is a tuple of move_scores for each possible move. If move is not playable, it will have 0 value,
-        while others will have a value at least min_for_playable_move.
+        Move policy is a tuple of move_scores for each possible move. If move is not playable, it will have value 0.
 
         See _score_move for details on the value of each move.
         """
 
         def score(move_index: int) -> float:
             if self.engine.is_move_playable(state, move_index):
-                move_score = self._score_move(state, move_index)
-                return max(move_score, min_for_playable_moves)
+                return self._score_move(state, move_index)
             else:
                 return 0.
 

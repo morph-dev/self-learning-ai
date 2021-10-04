@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from morphzero.ai.algorithms.hash_policy import HashPolicy
-from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch
+from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch, MonteCarloTreeSearchConfig
 from morphzero.common import print_progress_bar, board_to_string
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardState
 from morphzero.core.game import Player, Rules
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 "mcts_s1000_exp1.4_temp0.1_t1s_",
                 MonteCarloTreeSearch.factory(
                     HashPolicy.factory("./../models/tic_tac_toe/mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.3"),
-                    MonteCarloTreeSearch.Config(
+                    MonteCarloTreeSearchConfig(
                         number_of_simulations=1000,
                         exploration_rate=1.4,
                         temperature=0.1,

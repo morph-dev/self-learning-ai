@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, NamedTuple
 
 import wx
 
@@ -14,8 +13,7 @@ def get_result_message(result: Result, player_configs: Dict[Player, PlayerConfig
         return f"Winner is {player_configs[result.winner].name}!"
 
 
-@dataclass(frozen=True)
-class GameGraphicsContext:
+class GameGraphicsContext(NamedTuple):
     game_config: GameConfig
     graphics_renderer: wx.GraphicsRenderer
     player_colors: Dict[Player, wx.Colour]

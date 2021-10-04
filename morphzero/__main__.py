@@ -1,10 +1,8 @@
-from typing import Callable
+from __future__ import annotations
 
 from morphzero.ai.algorithms.hash_policy import HashPolicy
-from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch
-from morphzero.ai.algorithms.pure_montecarlo import PureMonteCarloTreeSearch
-from morphzero.ai.evaluator import EvaluatorModel, Evaluator
-from morphzero.core.game import Rules
+from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch, MonteCarloTreeSearchConfig
+from morphzero.ai.algorithms.pure_montecarlo import PureMonteCarloTreeSearch, PureMonteCarloTreeSearchConfig
 from morphzero.games.connectfour.game import ConnectFourRules
 from morphzero.games.genericgomoku.game import GenericGomokuRules
 from morphzero.ui.gameapp import GameApp
@@ -13,9 +11,6 @@ from morphzero.ui.gameselection import GameConfigParams, PlayerConfigParams, Gam
 
 
 def create_game_selection_state() -> GameSelectionState:
-    def evaluator_model_factory(evaluator_factory: Callable[[Rules], Evaluator]) -> Callable[[Rules], EvaluatorModel]:
-        return lambda rules: EvaluatorModel.create_with_best_move_picker(evaluator_factory(rules))
-
     return GameSelectionState([
         GameConfigParams(
             "Tic Tac Toe",
@@ -25,20 +20,18 @@ def create_game_selection_state() -> GameSelectionState:
                 PlayerConfigParams("Human", None),
                 PlayerConfigParams(
                     "pure_mcts_s1000_er1.4_t1s",
-                    evaluator_model_factory(
-                        PureMonteCarloTreeSearch.factory(
-                            PureMonteCarloTreeSearch.Config(
-                                number_of_simulations=1000,
-                                exploration_rate=1.4,
-                                max_time_sec=1)))),
+                    PureMonteCarloTreeSearch.factory(
+                        PureMonteCarloTreeSearchConfig(
+                            number_of_simulations=1000,
+                            exploration_rate=1.4,
+                            max_time_sec=1))),
                 PlayerConfigParams(
                     "pure_mcts_s3000_er1.4_t5s",
-                    evaluator_model_factory(
-                        PureMonteCarloTreeSearch.factory(
-                            PureMonteCarloTreeSearch.Config(
-                                number_of_simulations=3000,
-                                exploration_rate=1.4,
-                                max_time_sec=5)))),
+                    PureMonteCarloTreeSearch.factory(
+                        PureMonteCarloTreeSearchConfig(
+                            number_of_simulations=3000,
+                            exploration_rate=1.4,
+                            max_time_sec=5))),
             ] + [
                 PlayerConfigParams(
                     config,
@@ -55,7 +48,7 @@ def create_game_selection_state() -> GameSelectionState:
                     "mcts_s1000_exp1.4_temp0.1_t1s_" + config,
                     MonteCarloTreeSearch.factory(
                         HashPolicy.factory(f"./models/tic_tac_toe/{config}"),
-                        MonteCarloTreeSearch.Config(
+                        MonteCarloTreeSearchConfig(
                             number_of_simulations=1000,
                             exploration_rate=1.4,
                             temperature=0.1,
@@ -87,12 +80,11 @@ def create_game_selection_state() -> GameSelectionState:
                 PlayerConfigParams("Human", None),
                 PlayerConfigParams(
                     "pure_mcts_s10000_er1.4_t20s",
-                    evaluator_model_factory(
-                        PureMonteCarloTreeSearch.factory(
-                            PureMonteCarloTreeSearch.Config(
-                                number_of_simulations=10000,
-                                exploration_rate=1.4,
-                                max_time_sec=20)))),
+                    PureMonteCarloTreeSearch.factory(
+                        PureMonteCarloTreeSearchConfig(
+                            number_of_simulations=10000,
+                            exploration_rate=1.4,
+                            max_time_sec=20))),
             ]
         )
     ])

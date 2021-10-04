@@ -7,11 +7,18 @@ from dataclasses import dataclass, field
 from typing import NamedTuple, Optional, Callable, Dict, Deque, Tuple
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
-from morphzero.ai.evaluator import Evaluator, EvaluationResult
-from morphzero.core.game import Rules, State, Engine, Result, Move
+from morphzero.ai.base import Evaluator, Model, EvaluationResult
+from morphzero.core.game import Rules, State, Engine, Result, Move, MoveOrMoveIndex
 
 
-class PureMonteCarloTreeSearch(Evaluator):
+class PureMonteCarloTreeSearchConfig(NamedTuple):
+    """The configuration for the PureMonteCarloTreeSearch."""
+    number_of_simulations: int
+    exploration_rate: float = 1.4
+    max_time_sec: Optional[float] = 1
+
+
+class PureMonteCarloTreeSearch(Evaluator, Model):
     """The Ai that evaluates the state of a game based on Pure MonteCarloTreeSearch.
 
     The implementation is strongly based on https://en.wikipedia.org/wiki/Monte_Carlo_tree_search.
@@ -27,13 +34,13 @@ class PureMonteCarloTreeSearch(Evaluator):
             state.
     """
     rules: Rules
-    config: PureMonteCarloTreeSearch.Config
+    config: PureMonteCarloTreeSearchConfig
 
     engine: Engine
     nodes: Dict[State, _Node]
     discovered_states: Dict[State, State]
 
-    def __init__(self, rules: Rules, config: PureMonteCarloTreeSearch.Config):
+    def __init__(self, rules: Rules, config: PureMonteCarloTreeSearchConfig):
         self.rules = rules
         self.config = config
         self.engine = self.rules.create_engine()
@@ -60,9 +67,14 @@ class PureMonteCarloTreeSearch(Evaluator):
         for move_index in move_policy_dict:
             move_policy[move_index] = move_policy_dict[move_index]
 
-        return EvaluationResult.normalize_and_create(
-            node.best_move().win_ratio,
-            tuple(move_policy))
+        return EvaluationResult.create(
+            win_rate=node.best_move().win_ratio,
+            move_policy=tuple(move_policy),
+            normalize=True,
+        )
+
+    def play_move(self, state: State) -> MoveOrMoveIndex:
+        return self.evaluate(state).pick_best_move()
 
     def simulation(self, state: State) -> None:
         """Runs one MonteCarloTreeSearch simulation.
@@ -109,14 +121,8 @@ class PureMonteCarloTreeSearch(Evaluator):
         raise TypeError("Training on played games not supported.")
 
     @classmethod
-    def factory(cls, config: PureMonteCarloTreeSearch.Config) -> Callable[[Rules], PureMonteCarloTreeSearch]:
+    def factory(cls, config: PureMonteCarloTreeSearchConfig) -> Callable[[Rules], PureMonteCarloTreeSearch]:
         return lambda rules: PureMonteCarloTreeSearch(rules, config)
-
-    class Config(NamedTuple):
-        """The configuration for the PureMonteCarloTreeSearch."""
-        number_of_simulations: int
-        exploration_rate: float = 1.4
-        max_time_sec: Optional[float] = 1
 
 
 class _Node:

@@ -1,18 +1,33 @@
 from __future__ import annotations
 
 import math
-import random
 import time
 from dataclasses import dataclass
 from typing import NamedTuple, Iterable, Optional, Callable, Dict, Deque, Tuple
 
 from morphzero.ai.algorithms.util import pick_one_with_highest_value, result_for_player
-from morphzero.ai.evaluator import Evaluator, EvaluationResult
-from morphzero.ai.model import TrainingModel
+from morphzero.ai.base import TrainableModel, EvaluationResult, TrainingData, TrainingSummary, \
+    TrainableEvaluator, Evaluator
 from morphzero.core.game import State, Result, Rules, Engine
 
 
-class MonteCarloTreeSearch(TrainingModel):
+class MonteCarloTreeSearchConfig(NamedTuple):
+    """The configuration of the MonteCarloTreeSearch algorithm.
+
+    Attributes:
+        number_of_simulations: The number of simulations to run.
+        exploration_rate: The Exploration rate of the algorithm.
+        temperature: The lower the temperature, higher policy value for moves with higher exploration count. For
+            temperature 0, only moves with maximum exploration count have non-zero value.
+        max_time_sec: It will stop simulations if it is running longer that this (optional).
+    """
+    number_of_simulations: int
+    exploration_rate: float = 1.4
+    temperature: float = 1
+    max_time_sec: Optional[float] = 1
+
+
+class MonteCarloTreeSearch(TrainableModel, Evaluator):
     """The Monte Carlo Tree Search algorithm that uses other evaluators as base.
 
     Attributes:
@@ -24,11 +39,11 @@ class MonteCarloTreeSearch(TrainingModel):
     """
     rules: Rules
     engine: Engine
-    evaluator: Evaluator
-    config: MonteCarloTreeSearch.Config
+    evaluator: TrainableEvaluator
+    config: MonteCarloTreeSearchConfig
     nodes: _StateToNodeDefaultDict
 
-    def __init__(self, rules: Rules, evaluator: Evaluator, config: MonteCarloTreeSearch.Config):
+    def __init__(self, rules: Rules, evaluator: TrainableEvaluator, config: MonteCarloTreeSearchConfig):
         if not evaluator.supports_rules(rules):
             raise ValueError("Evaluator doesn't support rules")
         self.rules = rules
@@ -41,8 +56,8 @@ class MonteCarloTreeSearch(TrainingModel):
     def supports_rules(self, rules: Rules) -> bool:
         return self.rules == rules
 
-    def play_move(self, state: State) -> int:
-        assert not state.is_game_over, "Can't play a move when game is already over"
+    def evaluate(self, state: State) -> EvaluationResult:
+        assert not state.is_game_over, "Can't evaluate state when game is already over"
         start_time_sec = time.time()
         for simulation_index in range(self.config.number_of_simulations):
             elapsed_time_sec = time.time() - start_time_sec
@@ -52,34 +67,30 @@ class MonteCarloTreeSearch(TrainingModel):
                 break
             self.simulation(state)
 
-        move_indexes = Deque[int]()
-        move_policies = Deque[float]()
-        for move_index, move_policy in self.get_move_policy_dict(state).items():
-            move_indexes.append(move_index)
-            move_policies.append(move_policy)
-        return random.choices(move_indexes, move_policies)[0]
+        return self.nodes[state].evaluate()
 
-    def train_from_game(self, result: Result, states: Iterable[State]) -> None:
-        """Passes the training information to the evaluator."""
+    def play_move(self, state: State) -> int:
+        return self.evaluate(state).pick_best_move()
 
+    def train(self, training_data: TrainingData) -> TrainingSummary:
+        return self.evaluator.train(training_data)
+
+    def create_training_data_for_game(
+            self, result: Result, states: Iterable[State]) -> TrainingData:
         def get_desired_evaluation_result(state: State) -> EvaluationResult:
-            move_policy_dict = self.get_move_policy_dict(state)
-            move_policy = [0.] * self.rules.number_of_possible_moves()
-            for index, policy in move_policy_dict.items():
-                move_policy[index] = policy
-            return EvaluationResult.normalize_and_create(
+            node_evaluation_result = self.nodes[state].evaluate()
+            return EvaluationResult(
                 win_rate=result_for_player(state.current_player, result),
-                move_policy=tuple(move_policy))
+                move_policy=node_evaluation_result.move_policy,
+            )
 
-        self.evaluator.train({
-            state: get_desired_evaluation_result(state)
-            for state in states
-            if not state.is_game_over
-        })
-
-    def get_move_policy_dict(self, state: State) -> Dict[int, float]:
-        """Returns move policy as a dictionary for a given state."""
-        return self.nodes[state].get_move_policy_dict()
+        return TrainingData(
+            tuple(
+                (state, get_desired_evaluation_result(state))
+                for state in states
+                if not state.is_game_over
+            )
+        )
 
     def simulation(self, root_state: State) -> None:
         """Runs one MonteCarloTreeSearch simulation.
@@ -110,8 +121,8 @@ class MonteCarloTreeSearch(TrainingModel):
         # Rollout
         # We don't do a rollout. Instead we use result predicted by evaluator.
         result_per_player = {
-            node.state.current_player: node.result_prediction,
-            node.state.current_player.other_player: 1 - node.result_prediction,
+            node.state.current_player: node.evaluator_result_prediction,
+            node.state.current_player.other_player: 1 - node.evaluator_result_prediction,
         }
 
         # Backpropagation
@@ -120,24 +131,9 @@ class MonteCarloTreeSearch(TrainingModel):
 
     @classmethod
     def factory(cls,
-                evaluator_factory: Callable[[Rules], Evaluator],
-                config: MonteCarloTreeSearch.Config) -> Callable[[Rules], MonteCarloTreeSearch]:
+                evaluator_factory: Callable[[Rules], TrainableEvaluator],
+                config: MonteCarloTreeSearchConfig) -> Callable[[Rules], MonteCarloTreeSearch]:
         return lambda rules: MonteCarloTreeSearch(rules, evaluator_factory(rules), config)
-
-    class Config(NamedTuple):
-        """The configuration of the MonteCarloTreeSearch algorithm.
-
-        Attributes:
-            number_of_simulations: The number of simulations to run.
-            exploration_rate: The Exploration rate of the algorithm.
-            temperature: The lower the temperature, higher policy value for moves with higher exploration count. For
-                temperature 0, only moves with maximum exploration count have non-zero value.
-            max_time_sec: It will stop simulations if it is running longer that this (optional).
-        """
-        number_of_simulations: int
-        exploration_rate: float = 1.4
-        temperature: float = 1
-        max_time_sec: Optional[float] = 1
 
 
 class _Node:
@@ -158,20 +154,7 @@ class _Node:
     """
     state: State
     mcts: MonteCarloTreeSearch
-    expanded_info: Optional[_Node.ExpandedInfo]
-
-    @dataclass
-    class ExpandedInfo:
-        """Information available once Node has been expanded.
-
-        Attributes:
-            total_exploration_count: The number of times this node has been explored.
-            result_prediction: The result predicted for the state by the evaluator.
-            moves: The tuple of _MoveInfo for playable moves.
-        """
-        total_exploration_count: int
-        result_prediction: float
-        moves: Tuple[_MoveInfo, ...]
+    expanded_info: Optional[_ExpandedInfo]
 
     def __init__(self, state: State, mcts: MonteCarloTreeSearch):
         self.state = state
@@ -199,40 +182,33 @@ class _Node:
             _MoveInfo(
                 move_index=move.move_index,
                 next_node=self.mcts.nodes[engine.play_move(self.state, move)],
-                evaluator_policy=evaluation_result.move_policy[move.move_index])
+                evaluator_policy=evaluation_result.move_policy[move.move_index],
+            )
             for move in engine.playable_moves(self.state)
         )
 
-        self.expanded_info = self.ExpandedInfo(
+        self.expanded_info = _ExpandedInfo(
             total_exploration_count=0,
-            result_prediction=evaluation_result.win_rate,
+            evaluator_result_prediction=evaluation_result.win_rate,
             moves=moves
         )
 
-    def get_move_policy_dict(self) -> Dict[int, float]:
-        """Returns move policy as a move_index -> policy for playable moves.
+    def evaluate(self) -> EvaluationResult:
+        """Returns EvaluationResult based on exploration count.
 
-        Policy is calculated based on move exploration count and temperature (see MonteCarloTreeSearch.Config).
-
-        This should be used when deciding which move to play, not during simulations.
+        This should be used only after running all simulations (NOT during simulation).
         """
         assert self.expanded_info, "Node never expanded!"
+        move_policy = [0.] * self.mcts.rules.number_of_possible_moves()
+        for move_info in self.expanded_info.moves:
+            move_policy[move_info.move_index] = move_info.exploration_count
 
-        def move_policy(move_info: _MoveInfo) -> float:
-            assert self.expanded_info
-            temperature = self.mcts.config.temperature
-            if temperature == 0:
-                max_count = max(move_info.exploration_count for move_info in self.expanded_info.moves)
-                return 1. if move_info.exploration_count == max_count else 0.
-            elif temperature > 0:
-                return move_info.exploration_count ** (1 / temperature)
-            else:
-                raise ValueError(f"Temperature {temperature} is not supported.")
-
-        return {
-            move_info.move_index: move_policy(move_info)
-            for move_info in self.expanded_info.moves
-        }
+        return EvaluationResult.create(
+            win_rate=max(move_info.reward for move_info in self.expanded_info.moves),
+            move_policy=tuple(move_policy),
+            temperature=self.mcts.config.temperature,
+            normalize=True,
+        )
 
     def play_move(self) -> _MoveInfo:
         """Selects a move to play.
@@ -257,7 +233,7 @@ class _Node:
         total_exploration_count = self.expanded_info.total_exploration_count
 
         if total_exploration_count == 0:
-            expansion_value = 0.
+            expansion_value = 0.5  # assume draw
             exploration_coef = 1.
         else:
             expansion_value = move_info.reward
@@ -272,27 +248,28 @@ class _Node:
         self.expanded_info.total_exploration_count += 1
 
     @property
-    def result_prediction(self) -> float:
+    def evaluator_result_prediction(self) -> float:
         """The result predicted by evaluator (or actual result if state represents Game Over state."""
         if self.state.is_game_over:
             assert self.state.result
             return result_for_player(self.state.current_player, self.state.result)
         else:
             assert self.expanded_info, "Node never expanded!"
-            return self.expanded_info.result_prediction
+            return self.expanded_info.evaluator_result_prediction
 
 
-class _StateToNodeDefaultDict(Dict[State, _Node]):
-    """Wrapper around dict[State, _Node] that initializes Node for missing states."""
-    mcts: MonteCarloTreeSearch
+@dataclass
+class _ExpandedInfo:
+    """Information available once Node has been expanded.
 
-    def __init__(self, mcts: MonteCarloTreeSearch):
-        super().__init__()
-        self.mcts = mcts
-
-    def __missing__(self, state: State) -> _Node:
-        self[state] = _Node(state, self.mcts)
-        return self[state]
+    Attributes:
+        total_exploration_count: The number of times this node has been explored.
+        evaluator_result_prediction: The result predicted for the state by the evaluator.
+        moves: The tuple of _MoveInfo for playable moves.
+    """
+    total_exploration_count: int
+    evaluator_result_prediction: float
+    moves: Tuple[_MoveInfo, ...]
 
 
 @dataclass
@@ -310,10 +287,23 @@ class _MoveInfo:
     next_node: _Node
 
     evaluator_policy: float
-    reward: float = 0
+    reward: float = 0.5
     exploration_count: int = 0
 
     def update(self, new_reward: float) -> None:
         """Updates the reward based on the result of the played simulation."""
         self.reward = (self.reward * self.exploration_count + new_reward) / (self.exploration_count + 1)
         self.exploration_count += 1
+
+
+class _StateToNodeDefaultDict(Dict[State, _Node]):
+    """Wrapper around dict[State, _Node] that initializes Node for missing states."""
+    mcts: MonteCarloTreeSearch
+
+    def __init__(self, mcts: MonteCarloTreeSearch):
+        super().__init__()
+        self.mcts = mcts
+
+    def __missing__(self, state: State) -> _Node:
+        self[state] = _Node(state, self.mcts)
+        return self[state]

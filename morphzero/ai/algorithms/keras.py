@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Dict
+from typing import NamedTuple
 
 import tensorflow as tf
 
-from morphzero.ai.evaluator import Evaluator, EvaluationResult
+from morphzero.ai.base import TrainableEvaluator, EvaluationResult, TrainingData, TrainingSummary
 from morphzero.core.game import Rules, State, Engine
 
 
-class KerasEvaluator(Evaluator):
+@dataclass(frozen=True)
+class KerasEvaluatorConfig:
+    training: bool
+    verbose: int
+    learning_rate: float
+    epochs: int
+
+
+class KerasEvaluator(TrainableEvaluator):
     rules: Rules
     config: KerasEvaluatorConfig
     engine: Engine
@@ -32,25 +41,35 @@ class KerasEvaluator(Evaluator):
             tf.convert_to_tensor([state.to_training_data()]),
             training=self.config.training
         )
-        move_policy = move_policy_tensor[0].numpy()
-        for move_index, playable in enumerate(self.engine.playable_moves_bitmap(state)):
-            if not playable:
-                move_policy[move_index] = 0
-        return EvaluationResult.normalize_and_create(
-            win_rate_tensor[0][0].numpy(),
-            tuple(move_policy_tensor[0].numpy()),
+        return EvaluationResult.create(
+            win_rate=win_rate_tensor[0][0].numpy(),
+            move_policy=tuple(move_policy_tensor[0].numpy()),
+            playable_moves_bitmap=self.engine.playable_moves_bitmap(state),
+            normalize=True,
         )
 
-    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
-        states, evaluation_results = zip(*list(learning_data.items()))
-        win_rates, move_policies = zip(*evaluation_results)
-        inputs = tf.convert_to_tensor([state.to_training_data() for state in states])
+    def train(self, training_data: TrainingData) -> KerasTrainingSummary:
+        inputs = tf.convert_to_tensor(
+            [
+                state.to_training_data()
+                for state, _ in training_data.data
+            ]
+        )
         outputs = [
-            tf.convert_to_tensor([[win_rate] for win_rate in win_rates]),
-            tf.convert_to_tensor([move_policy for move_policy in move_policies]),
+            tf.convert_to_tensor(
+                [
+                    [evaluation_result.win_rate]
+                    for _, evaluation_result in training_data.data
+                ]
+            ),
+            tf.convert_to_tensor(
+                [
+                    evaluation_result.move_policy
+                    for _, evaluation_result in training_data.data
+                ]
+            ),
         ]
-
-        self.model.fit(
+        history = self.model.fit(
             inputs,
             outputs,
             initial_epoch=0,
@@ -62,15 +81,14 @@ class KerasEvaluator(Evaluator):
             shuffle=True,
             verbose=self.config.verbose,
         )
+        return KerasTrainingSummary(history)
 
+    @abstractmethod
     def create_model(self) -> tf.keras.Model:
         """Creates a model that has State.to_training_data as input and win_rate and move_policy as output."""
         raise NotImplementedError()
 
 
-@dataclass(frozen=True)
-class KerasEvaluatorConfig:
-    training: bool
-    verbose: int
-    learning_rate: float
-    epochs: int
+@dataclass
+class KerasTrainingSummary(TrainingSummary):
+    keras_history: tf.keras.callbacks.History

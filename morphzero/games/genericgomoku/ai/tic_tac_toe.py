@@ -50,7 +50,8 @@ class TicTacToeKeras(KerasEvaluator):
         model.compile(
             loss=[
                 'mean_squared_error',
-                'categorical_crossentropy',
+                'mean_squared_error',
+                # 'categorical_crossentropy',
             ],
             optimizer=keras.optimizers.Adam(self.config.learning_rate))
         return model
@@ -61,7 +62,6 @@ class TicTacToeKerasConfig(KerasEvaluatorConfig):
     filters: int
     mid_layer_size: int
     kernel_size: Tuple[int, int] = (3, 3)
-
 
 # class dotdict(dict):
 #     def __getattr__(self, name):

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, unique
 from typing import Optional, Dict
 
-from morphzero.ai.model import Model
+from morphzero.ai.base import Model
 from morphzero.core.game import Player, Rules
 
 
