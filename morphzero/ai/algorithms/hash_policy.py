@@ -57,11 +57,11 @@ class HashPolicyConfig(NamedTuple):
     learning_rate: float
     exploration_rate: float
     valid_move_min_value: float = 0.000001
-    temperature: float = 1
+    temperature: float = 0.  # play the best move
 
     @classmethod
     def create_for_playing(cls) -> HashPolicyConfig:
-        return cls(learning_rate=0, exploration_rate=0, temperature=0.25)
+        return cls(learning_rate=0., exploration_rate=0., temperature=0.)
 
 
 class HashPolicy(TrainableEvaluator, TrainableModel):
@@ -133,6 +133,7 @@ class HashPolicy(TrainableEvaluator, TrainableModel):
                     )
                 )
                 for state in states
+                if not state.is_game_over
             )
         )
 

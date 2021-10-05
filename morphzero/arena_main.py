@@ -1,7 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
-from morphzero.ai.algorithms.hash_policy import HashPolicy
-from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch, MonteCarloTreeSearchConfig
+from morphzero.ai.algorithms.hash_policy import HashPolicy, HashPolicyConfig
 from morphzero.common import print_progress_bar, board_to_string
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardState
 from morphzero.core.game import Player, Rules
@@ -11,16 +10,12 @@ from morphzero.ui.gameselection import PlayerConfigParams
 
 def battle(
         rules: Rules,
-        players: Dict[Player, PlayerConfigParams],
+        players: Tuple[PlayerConfigParams, ...],
         number_of_games: int,
         until_first_non_draw: bool) -> None:
-    names = {
-        player: players[player].default_name
-        for player in players
-    }
-    model_factory = {
-        player: players[player].ai_model_factory
-        for player in players
+    players_dict = {
+        Player.FIRST_PLAYER: players[0],
+        Player.SECOND_PLAYER: players[1],
     }
 
     def swap_players(d: Dict[Player, Any]) -> None:
@@ -29,15 +24,20 @@ def battle(
     engine = rules.create_engine()
     score_distribution = {
         "draw": 0,
-        names[Player.FIRST_PLAYER]: 0,
-        names[Player.SECOND_PLAYER]: 0,
+        players_dict[Player.FIRST_PLAYER].default_name: 0,
+        players_dict[Player.SECOND_PLAYER].default_name: 0,
     }
     for i in range(number_of_games):
-        print_progress_bar(i + 1, number_of_games, suffix=f"{i + 1} out of {number_of_games}")
+        print_progress_bar(
+            i + 1,
+            number_of_games,
+            suffix=f"- {i + 1} / {number_of_games}\t" +
+                   ", ".join(f"{name}: {value}" for name, value in score_distribution.items()),
+        )
         models = {
-            player: factory(rules)
-            for player, factory in model_factory.items()
-            if factory
+            player: player_config.ai_model_factory(rules)
+            for player, player_config in players_dict.items()
+            if player_config.ai_model_factory
         }
 
         state = engine.new_game()
@@ -48,7 +48,7 @@ def battle(
 
         assert state.result
         if state.result.winner != Player.NO_PLAYER:
-            score_distribution[names[state.result.winner]] += 1
+            score_distribution[players_dict[state.result.winner].default_name] += 1
             if until_first_non_draw:
                 for s in states:
                     assert isinstance(s, ConnectOnMatrixBoardState)
@@ -58,8 +58,7 @@ def battle(
         else:
             score_distribution["draw"] += 1
 
-        swap_players(names)
-        swap_players(model_factory)
+        swap_players(players_dict)
 
     print("Score distribution: ")
     for name, score in score_distribution.items():
@@ -69,20 +68,20 @@ def battle(
 if __name__ == "__main__":
     battle(
         GenericGomokuRules.create_tic_tac_toe_rules(),
-        {
-            Player.FIRST_PLAYER: PlayerConfigParams(
-                "min-max",
-                HashPolicy.factory("./../models/tic_tac_toe/hash_policy_min_max")),
-            Player.SECOND_PLAYER: PlayerConfigParams(
-                "mcts_s1000_exp1.4_temp0.1_t1s_",
-                MonteCarloTreeSearch.factory(
-                    HashPolicy.factory("./../models/tic_tac_toe/mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.3"),
-                    MonteCarloTreeSearchConfig(
-                        number_of_simulations=1000,
-                        exploration_rate=1.4,
-                        temperature=0.1,
-                        max_time_sec=1))),
-        },
+        tuple(
+            PlayerConfigParams(
+                filename,
+                HashPolicy.factory(
+                    f"./../models/tic_tac_toe/{filename}",
+                    HashPolicyConfig(learning_rate=0., exploration_rate=0., temperature=0.1),
+                )
+            )
+            for filename in [
+                # "hash_policy_min_max",
+                "hash_policy__tr_i10000_s1__hash_lr0.3_ex0.2",
+                "hash_policy__tr_i100000_s1__hash_lr0.3_ex0.2",
+            ]
+        ),
         number_of_games=100,
         until_first_non_draw=False,
     )

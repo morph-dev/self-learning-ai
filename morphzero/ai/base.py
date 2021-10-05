@@ -48,7 +48,7 @@ class EvaluationResult:
                 for policy, playable in zip(move_policy, playable_moves_bitmap)
             )
 
-        if temperature:
+        if temperature is not None:
             if temperature == 0:
                 max_policy = max(move_policy)
                 move_policy = tuple(

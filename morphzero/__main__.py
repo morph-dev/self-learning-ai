@@ -38,8 +38,8 @@ def create_game_selection_state() -> GameSelectionState:
                     HashPolicy.factory(f"./models/tic_tac_toe/{config}"))
                 for config in [
                     "hash_policy_min_max",
-                    "hash_policy_g10000_lr0.3_er0.2",
-                    "hash_policy_g100000_lr0.3_er0.2",
+                    "hash_policy__tr_i10000_s1__hash_lr0.3_ex0.2",
+                    "hash_policy__tr_i100000_s1__hash_lr0.3_ex0.2",
                     "mcts_hash_policy_g1000_s1000_exp1.4_temp1_lr0.3",
                     "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.3",
                 ]
@@ -57,8 +57,8 @@ def create_game_selection_state() -> GameSelectionState:
                     )
                 )
                 for config in [
-                    "hash_policy_g10000_lr0.3_er0.2",
-                    "hash_policy_g100000_lr0.3_er0.2",
+                    "hash_policy__tr_i10000_s1__hash_lr0.3_ex0.2",
+                    "hash_policy__tr_i100000_s1__hash_lr0.3_ex0.2",
                     "mcts_hash_policy_g1000_s1000_exp1.4_temp1_lr0.3",
                     "mcts_hash_policy_g10000_s1000_exp1.4_temp1_lr0.3",
                 ]

@@ -23,11 +23,19 @@ class Trainer:
 
     def train(self) -> None:
         engine = self.rules.create_engine()
-        for batch_index in range(self.config.iterations):
-            print(f"Iteration: {batch_index + 1:4d} out of {self.config.iterations}")
+        total_games = self.config.iterations * self.config.simulations
+        game_index = 0
+        for iteration in range(self.config.iterations):
             training_data: Optional[TrainingData] = None
-            for game_index in range(self.config.simulations):
-                print_progress_bar(game_index + 1, self.config.simulations, "Training")
+            for simulation in range(self.config.simulations):
+                game_index += 1
+                print_progress_bar(
+                    iteration=game_index,
+                    total=total_games,
+                    prefix="Training",
+                    suffix=f"Iteration: {iteration + 1:d} / {self.config.iterations}, " +
+                           f"Simulation: {simulation + 1:d} / {self.config.simulations}\t\t\t"
+                )
 
                 states = Deque[State]()
 
