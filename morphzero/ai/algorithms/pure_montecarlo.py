@@ -45,11 +45,14 @@ class PureMonteCarloTreeSearch(Evaluator, Model):
         self.config = config
         self.engine = self.rules.create_engine()
         self.nodes = dict()
-
         self.discovered_states = dict()
 
     def supports_rules(self, rules: Rules) -> bool:
         return self.rules == rules
+
+    def reset_inner_state(self) -> None:
+        self.nodes = dict()
+        self.discovered_states = dict()
 
     def evaluate(self, state: State) -> EvaluationResult:
         assert not state.is_game_over, "Can't evaluate Game Over state."

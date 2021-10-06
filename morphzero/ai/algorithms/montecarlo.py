@@ -56,6 +56,10 @@ class MonteCarloTreeSearch(TrainableModel, Evaluator):
     def supports_rules(self, rules: Rules) -> bool:
         return self.rules == rules
 
+    def reset_inner_state(self) -> None:
+        self.evaluator.reset_inner_state()
+        self.nodes = _StateToNodeDefaultDict(self)
+
     def evaluate(self, state: State) -> EvaluationResult:
         assert not state.is_game_over, "Can't evaluate state when game is already over"
         start_time_sec = time.time()

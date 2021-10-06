@@ -79,10 +79,19 @@ def create_game_selection_state() -> GameSelectionState:
             [
                 PlayerConfigParams("Human", None),
                 PlayerConfigParams(
-                    "pure_mcts_s10000_er1.4_t20s",
+                    "pure_mcts_s1000_er1.4_t20s",
                     PureMonteCarloTreeSearch.factory(
                         PureMonteCarloTreeSearchConfig(
-                            number_of_simulations=10000,
+                            number_of_simulations=1000,
+                            exploration_rate=1.4,
+                            max_time_sec=20))),
+                PlayerConfigParams(
+                    "mcts_s1000_er1.4_t20s",
+                    MonteCarloTreeSearch.factory(
+                        HashPolicy.factory(
+                            "./models/connect4/hash_policy_mcts__tr_i100_s1__hash_lr0.3_ex0__mcts_sim1000_ex1.4_temp1"),
+                        MonteCarloTreeSearchConfig(
+                            number_of_simulations=1000,
                             exploration_rate=1.4,
                             max_time_sec=20))),
             ]

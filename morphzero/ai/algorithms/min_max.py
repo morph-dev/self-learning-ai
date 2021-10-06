@@ -28,14 +28,14 @@ class MinMaxEvaluator(Evaluator):
     def supports_rules(self, rules: Rules) -> bool:
         return self.rules == rules
 
+    def reset_inner_state(self) -> None:
+        pass
+
     def evaluate(self, state: State) -> EvaluationResult:
         return EvaluationResult(
             self._score_state(state),
             self._get_move_policy(state)
         )
-
-    def train(self, learning_data: Dict[State, EvaluationResult]) -> None:
-        raise TypeError("Training not supported.")
 
     def _score_state(self, state: State) -> float:
         """Scores the state.

@@ -27,12 +27,18 @@ def battle(
         players_dict[Player.FIRST_PLAYER].default_name: 0,
         players_dict[Player.SECOND_PLAYER].default_name: 0,
     }
+    print("p1:", players_dict[Player.FIRST_PLAYER].default_name)
+    print("p2:", players_dict[Player.SECOND_PLAYER].default_name)
     for i in range(number_of_games):
         print_progress_bar(
             i + 1,
             number_of_games,
             suffix=f"- {i + 1} / {number_of_games}\t" +
-                   ", ".join(f"{name}: {value}" for name, value in score_distribution.items()),
+                   ", ".join((
+                       f"draw: {score_distribution['draw']}",
+                       f"p1: {score_distribution[players_dict[Player.FIRST_PLAYER].default_name]}",
+                       f"p2: {score_distribution[players_dict[Player.SECOND_PLAYER].default_name]}",
+                   )),
         )
         models = {
             player: player_config.ai_model_factory(rules)

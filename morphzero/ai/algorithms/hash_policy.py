@@ -18,10 +18,9 @@ class StateHashPolicy(Dict[State, float]):
     def __missing__(self, state: State) -> float:
         if state.is_game_over:
             assert state.result
-            self[state] = result_for_player(state.current_player, state.result)
+            return result_for_player(state.current_player, state.result)
         else:
-            self[state] = 0.5
-        return self[state]
+            return 0.5
 
     def update_policy(self,
                       state: State,
@@ -82,6 +81,9 @@ class HashPolicy(TrainableEvaluator, TrainableModel):
 
     def supports_rules(self, rules: Rules) -> bool:
         return rules == self.rules
+
+    def reset_inner_state(self) -> None:
+        pass
 
     def evaluate(self, state: State) -> EvaluationResult:
         return EvaluationResult.create(

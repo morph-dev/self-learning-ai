@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Deque, Optional
+from typing import NamedTuple, Deque, Optional, List
 
 from morphzero.ai.base import TrainableModel, TrainingData
 from morphzero.common import print_progress_bar
@@ -21,8 +21,9 @@ class Trainer:
         self.model = model
         self.config = config
 
-    def train(self) -> None:
+    def train(self) -> List[TrainingData]:
         engine = self.rules.create_engine()
+        all_training_data = []
         total_games = self.config.iterations * self.config.simulations
         game_index = 0
         for iteration in range(self.config.iterations):
@@ -40,6 +41,7 @@ class Trainer:
                 states = Deque[State]()
 
                 # play a game
+                self.model.reset_inner_state()
                 state = engine.new_game()
                 states.append(state)
                 while not state.is_game_over:
@@ -57,6 +59,8 @@ class Trainer:
 
             if training_data:
                 self.model.train(training_data)
+                all_training_data.append(training_data)
+        return all_training_data
 
 
 class TrainerConfig(NamedTuple):

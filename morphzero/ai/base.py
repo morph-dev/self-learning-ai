@@ -104,6 +104,11 @@ class Evaluator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def reset_inner_state(self) -> None:
+        """Called in order to reset inner state and have a clean game (e.g. for new game)."""
+        raise NotImplementedError()
+
+    @abstractmethod
     def evaluate(self, state: State) -> EvaluationResult:
         """Evaluates the state."""
         raise NotImplementedError()
@@ -115,6 +120,11 @@ class Model(ABC):
     @abstractmethod
     def supports_rules(self, rules: Rules) -> bool:
         """Whether given rules are supported."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def reset_inner_state(self) -> None:
+        """Called in order to reset inner state and have a clean game (e.g. for new game)."""
         raise NotImplementedError()
 
     @abstractmethod

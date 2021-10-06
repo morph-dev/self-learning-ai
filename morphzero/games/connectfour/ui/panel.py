@@ -54,13 +54,10 @@ class ConnectFourPanel(BaseGamePanel, MatrixGameBoard.OnClickCallback):
             self, board_coordinates: MatrixBoardCoordinates) -> Optional[ConnectFourMove]:
         """Finds a playable move (if it exists) that matches the column."""
         engine = self.game_service.engine
+        assert isinstance(engine, ConnectFourEngine)
         state = self.game_service.state
-        assert isinstance(engine, ConnectFourEngine) and isinstance(state, ConnectFourState)
-
-        for move in engine.playable_moves(state):
-            if move.coordinates and (move.coordinates.column == board_coordinates.column):
-                return move
-        return None
+        assert isinstance(state, ConnectFourState)
+        return engine.playable_move_for_column(state, board_coordinates.column)
 
 
 class HoverDrawer(BaseHoverDrawer):

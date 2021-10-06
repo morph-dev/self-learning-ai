@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Union, Iterator, Tuple
+from typing import Union, Iterator, Tuple, Optional
 
 import numpy as np
 
@@ -57,21 +57,29 @@ class ConnectFourEngine(ConnectOnMatrixBoardEngine):
     def playable_moves(self, state: ConnectFourState) -> Iterator[ConnectFourMove]:  # type: ignore[override]
         if state.is_game_over:
             return []
+
         for column in range(self.rules.board_size.columns):
-            if state.board.rows[0][column] == Player.NO_PLAYER:
-                for row in range(self.rules.board_size.rows):
-                    # We found move if we are on the last row or next row is not EMPTY.
-                    if row == self.rules.board_size.rows - 1 or state.board.rows[row + 1][column] != Player.NO_PLAYER:
-                        coordinates = MatrixBoardCoordinates(row, column)
-                        yield ConnectFourMove(
-                            move_index=self.get_move_index_for_coordinates(coordinates),
-                            resign=False,
-                            coordinates=coordinates)
-                        break
+            move = self.playable_move_for_column(state, column)
+            if move:
+                yield move
+
         yield ConnectFourMove(
             move_index=self.get_move_index_for_resign(),
             resign=True,
-            coordinates=None)
+            coordinates=None,
+        )
+
+    def playable_move_for_column(self, state: ConnectFourState, column: int) -> Optional[ConnectFourMove]:
+        # Going bottom to top, return first row that is empty.
+        for row in reversed(range(self.rules.board_size.rows)):
+            if state.board.rows[row][column] == Player.NO_PLAYER:
+                coordinates = MatrixBoardCoordinates(row, column)
+                return ConnectFourMove(
+                    move_index=self.get_move_index_for_coordinates(coordinates),
+                    resign=False,
+                    coordinates=coordinates,
+                )
+        return None
 
     def playable_moves_bitmap(self, state: ConnectFourState) -> Tuple[bool, ...]:  # type: ignore[override]
         result = [False] * self.number_of_possible_moves(self.rules.board_size)

@@ -36,6 +36,9 @@ class KerasEvaluator(TrainableEvaluator):
     def supports_rules(self, rules: Rules) -> bool:
         return self.rules == rules
 
+    def reset_inner_state(self) -> None:
+        pass
+
     def evaluate(self, state: State) -> EvaluationResult:
         win_rate_tensor, move_policy_tensor = self.model(
             tf.convert_to_tensor([state.to_training_data()]),
