@@ -1,9 +1,12 @@
 from typing import Any, Dict, Tuple
 
-from morphzero.ai.algorithms.hash_policy import HashPolicy, HashPolicyConfig
+from morphzero.ai.algorithms.hash_policy import HashPolicy
+from morphzero.ai.algorithms.montecarlo import MonteCarloTreeSearch, MonteCarloTreeSearchConfig
+from morphzero.ai.algorithms.pure_montecarlo import PureMonteCarloTreeSearch, PureMonteCarloTreeSearchConfig
 from morphzero.common import print_progress_bar, board_to_string
 from morphzero.core.common.connect_on_matrix_board import ConnectOnMatrixBoardState
 from morphzero.core.game import Player, Rules
+from morphzero.games.connectfour.game import ConnectFourRules
 from morphzero.games.genericgomoku.game import GenericGomokuRules
 from morphzero.ui.gameselection import PlayerConfigParams
 
@@ -73,20 +76,48 @@ def battle(
 
 if __name__ == "__main__":
     battle(
-        GenericGomokuRules.create_tic_tac_toe_rules(),
-        tuple(
+        # GenericGomokuRules.create_tic_tac_toe_rules(),
+        # tuple(
+        #     PlayerConfigParams(
+        #         filename,
+        #         HashPolicy.factory(
+        #             f"./../models/tic_tac_toe/{filename}",
+        #             HashPolicyConfig(learning_rate=0., exploration_rate=0., temperature=0.1),
+        #         )
+        #     )
+        #     for filename in [
+        #         # "hash_policy_min_max",
+        #         "hash_policy__tr_i10000_s1__hash_lr0.3_ex0.2",
+        #         "hash_policy__tr_i100000_s1__hash_lr0.3_ex0.2",
+        #     ]
+        # ),
+        ConnectFourRules.create_default_rules(),
+        (
+            # PlayerConfigParams(
+            #     "pure_mcts_s1000_er1.4_t20s",
+            #     PureMonteCarloTreeSearch.factory(
+            #         PureMonteCarloTreeSearchConfig(
+            #             number_of_simulations=1000,
+            #             exploration_rate=1.4,
+            #             max_time_sec=20))),
             PlayerConfigParams(
-                filename,
-                HashPolicy.factory(
-                    f"./../models/tic_tac_toe/{filename}",
-                    HashPolicyConfig(learning_rate=0., exploration_rate=0., temperature=0.1),
-                )
-            )
-            for filename in [
-                # "hash_policy_min_max",
-                "hash_policy__tr_i10000_s1__hash_lr0.3_ex0.2",
-                "hash_policy__tr_i100000_s1__hash_lr0.3_ex0.2",
-            ]
+                "mcts_i400_s1000_er1.4_t20s",
+                MonteCarloTreeSearch.factory(
+                    HashPolicy.factory(
+                        "./../models/connect4/hash_policy_mcts__tr_i400_s1__hash_lr0.1_ex0__mcts_sim1000_ex1.4_temp1"),
+                    MonteCarloTreeSearchConfig(
+                        number_of_simulations=1000,
+                        exploration_rate=1.4,
+                        max_time_sec=20))),
+            PlayerConfigParams(
+                "mcts_i1000_s1000_er1.4_t20s",
+                MonteCarloTreeSearch.factory(
+                    HashPolicy.factory(
+                        "./../models/connect4/hash_policy_mcts__tr_i1000_s1__hash_lr0.1_ex0__mcts_sim1000_ex1.4_temp1"),
+                    MonteCarloTreeSearchConfig(
+                        number_of_simulations=1000,
+                        exploration_rate=1.4,
+                        max_time_sec=20))),
         ),
         number_of_games=100,
         until_first_non_draw=False,

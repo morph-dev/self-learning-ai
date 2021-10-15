@@ -30,7 +30,8 @@ def debug_connect4_hash_policy() -> None:
     rules = ConnectFourRules.create_default_rules()
     engine = rules.create_engine()
     model = HashPolicy.factory(
-        "./../models/connect4/hash_policy_mcts__tr_i10_s1__hash_lr0.3_ex0__mcts_sim1000_ex1.4_temp1",
+        # "./../models/connect4/hash_policy_mcts__tr_i10_s1__hash_lr0.3_ex0__mcts_sim1000_ex1.4_temp1",
+        "./../models/connect4/hash_policy_mcts__tr_i400_s1__hash_lr0.1_ex0__mcts_sim1000_ex1.4_temp1",
         HashPolicyConfig(learning_rate=0, exploration_rate=0, temperature=1.)
     )(rules)
 
@@ -53,7 +54,7 @@ def debug_connect4_hash_policy() -> None:
     print(board_to_string(state.board))
     evaluate(state, print_result=True)
 
-    for move_column in [3, 2]:
+    for move_column in [5, 3, 2, 6]:
         move = engine.playable_move_for_column(state, move_column)
         assert move
         state = engine.play_move(state, move)

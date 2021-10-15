@@ -80,7 +80,7 @@ def train_mcts_with_keras_tic_tac_toe(
 
 
 def train() -> None:
-    trainer_iterations = 400
+    trainer_iterations = 1000
     trainer_simulations = 1
 
     hash_policy_learning_rate = 0.1
